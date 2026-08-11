@@ -1,10 +1,12 @@
 import { randomUUID } from "node:crypto"
-import { count, eq } from "drizzle-orm"
+import { asc, count, eq } from "drizzle-orm"
+import { getDatabase } from "@/db/client.server"
 import type { VocabularyDatabase } from "@/db/client.server"
 import type { NewVocabularyRecord, VocabularyRecord } from "@/db/schema"
 import { vocabulary } from "@/db/schema"
 import type { VocabularyCsvRow } from "../../../scripts/validate-hsk4-dataset"
 import { normalizePinyin } from "./normalize"
+import type { VocabularyItem } from "./types"
 
 export type ManualVocabularyInput = {
   hanzi: string
@@ -95,6 +97,33 @@ export async function insertManualVocabulary(
     .returning()
 
   return record
+}
+
+/**
+ * Every word, sorted the way the list renders it: by tone-free pinyin, with
+ * Hanzi as a stable tie-breaker so two readings of one spelling keep a fixed
+ * order. Selects only the client-safe columns.
+ */
+export function selectVocabulary(
+  db: VocabularyDatabase
+): Promise<Array<VocabularyItem>> {
+  return db
+    .select({
+      id: vocabulary.id,
+      hanzi: vocabulary.hanzi,
+      pinyin: vocabulary.pinyin,
+      pinyinSortKey: vocabulary.pinyinSortKey,
+      translationId: vocabulary.translationId,
+      translationEn: vocabulary.translationEn,
+      kind: vocabulary.kind,
+    })
+    .from(vocabulary)
+    .orderBy(asc(vocabulary.pinyinSortKey), asc(vocabulary.hanzi))
+}
+
+/** The handler behind `getVocabularyFn`; resolves the database itself. */
+export function getVocabulary(): Promise<Array<VocabularyItem>> {
+  return selectVocabulary(getDatabase())
 }
 
 export async function countVocabulary(db: VocabularyDatabase): Promise<number> {

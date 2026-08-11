@@ -11,6 +11,7 @@ import {
   getVocabularyByHanzi,
   insertManualVocabulary,
   seedOfficialVocabulary,
+  selectVocabulary,
 } from "../src/features/vocabulary/vocabulary.server"
 import type { VocabularyCsvRow } from "../scripts/validate-hsk4-dataset"
 
@@ -105,5 +106,37 @@ describe("vocabulary persistence", () => {
     await insertManualVocabulary(db, manualRow)
 
     await expect(insertManualVocabulary(db, manualRow)).rejects.toThrow()
+  })
+
+  it("accepts the syllabus' two 批 rows, which share a word and pronunciation", async () => {
+    await seedOfficialVocabulary(db, [
+      { ...officialRow, external_id: "hsk3-4-0555", hanzi: "批", pinyin: "pī" },
+      { ...officialRow, external_id: "hsk3-4-0556", hanzi: "批", pinyin: "pī" },
+    ])
+
+    expect(await countVocabulary(db)).toBe(2)
+  })
+})
+
+describe("selectVocabulary", () => {
+  it("sorts by tone-free pinyin, then Hanzi, and hides server-only columns", async () => {
+    await seedOfficialVocabulary(db, [
+      { ...officialRow, external_id: "x-3", hanzi: "会议", pinyin: "huìyì" },
+      { ...officialRow, external_id: "x-1", hanzi: "安排", pinyin: "ānpái" },
+      { ...officialRow, external_id: "x-2", hanzi: "俺", pinyin: "ǎn" },
+    ])
+
+    const items = await selectVocabulary(db)
+
+    expect(items.map((entry) => entry.hanzi)).toEqual(["俺", "安排", "会议"])
+    expect(Object.keys(items[0]).sort()).toEqual([
+      "hanzi",
+      "id",
+      "kind",
+      "pinyin",
+      "pinyinSortKey",
+      "translationEn",
+      "translationId",
+    ])
   })
 })
