@@ -5,6 +5,45 @@ export type StudySession = {
   source: "selected" | "random"
 }
 
+/**
+ * Where a pending session lives between the list and the study page.
+ *
+ * Session storage, not the URL or the database: a deck is per-tab and
+ * disposable, and a thousand IDs do not belong in a query string.
+ */
+export const STUDY_SESSION_KEY = "hsk4-study-session"
+
+export function storeStudySession(session: StudySession): void {
+  sessionStorage.setItem(STUDY_SESSION_KEY, JSON.stringify(session))
+}
+
+/** Returns null for a missing, malformed or empty payload — never throws. */
+export function readStudySession(): StudySession | null {
+  const raw = sessionStorage.getItem(STUDY_SESSION_KEY)
+  if (!raw) return null
+
+  try {
+    const parsed: unknown = JSON.parse(raw)
+    if (!isStudySession(parsed)) return null
+    return parsed
+  } catch {
+    return null
+  }
+}
+
+function isStudySession(value: unknown): value is StudySession {
+  if (typeof value !== "object" || value === null) return false
+  const candidate = value as Partial<StudySession>
+  return (
+    Array.isArray(candidate.cards) &&
+    candidate.cards.length > 0 &&
+    candidate.cards.every(
+      (card) => typeof card?.id === "string" && typeof card?.hanzi === "string"
+    ) &&
+    (candidate.source === "selected" || candidate.source === "random")
+  )
+}
+
 /** Shuffles a copy in place using the injected source of randomness. */
 function shuffle(
   items: Array<VocabularyItem>,

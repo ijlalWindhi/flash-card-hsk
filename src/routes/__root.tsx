@@ -1,4 +1,9 @@
-import { HeadContent, Scripts, createRootRoute } from "@tanstack/react-router"
+import {
+  HeadContent,
+  Link,
+  Scripts,
+  createRootRoute,
+} from "@tanstack/react-router"
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools"
 import { TanStackDevtools } from "@tanstack/react-devtools"
 
@@ -7,28 +12,30 @@ import appCss from "../styles.css?url"
 export const Route = createRootRoute({
   head: () => ({
     meta: [
+      { charSet: "utf-8" },
+      { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { title: "Han.note — kosa kata HSK 4" },
       {
-        charSet: "utf-8",
-      },
-      {
-        name: "viewport",
-        content: "width=device-width, initial-scale=1",
-      },
-      {
-        title: "TanStack Start Starter",
+        name: "description",
+        content:
+          "Hafalkan 1.000 kata yang diperkenalkan di HSK 3.0 tingkat 4, dengan arti Indonesia dan Inggris.",
       },
     ],
-    links: [
-      {
-        rel: "stylesheet",
-        href: appCss,
-      },
-    ],
+    links: [{ rel: "stylesheet", href: appCss }],
   }),
   notFoundComponent: () => (
-    <main className="container mx-auto p-4 pt-16">
-      <h1>404</h1>
-      <p>The requested page could not be found.</p>
+    <main className="mx-auto w-full max-w-3xl px-5 py-24">
+      <p className="eyebrow text-mark">404</p>
+      <h1 className="mt-2 text-2xl font-medium">Halaman tidak ditemukan</h1>
+      <p className="mt-2 text-sm text-muted-foreground">
+        Tautan yang kamu buka tidak ada di aplikasi ini.
+      </p>
+      <Link
+        to="/"
+        className="mt-6 inline-block text-sm underline underline-offset-4"
+      >
+        Kembali ke daftar kosa kata
+      </Link>
     </main>
   ),
   shellComponent: RootDocument,
@@ -36,16 +43,40 @@ export const Route = createRootRoute({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="id">
       <head>
         <HeadContent />
       </head>
-      <body>
-        {children}
+      <body className="flex min-h-svh flex-col">
+        <header className="border-b border-border">
+          <div className="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-5 py-4">
+            <Link to="/" className="eyebrow no-underline">
+              Han<span className="text-mark">.</span>note
+            </Link>
+            <nav className="flex items-center gap-5 text-xs text-muted-foreground">
+              <span className="hidden sm:inline">HSK 3.0 · tingkat 4</span>
+              <Link to="/about" className="underline-offset-4 hover:underline">
+                Tentang
+              </Link>
+            </nav>
+          </div>
+        </header>
+
+        <div className="flex-1">{children}</div>
+
+        <footer className="border-t border-border">
+          <div className="mx-auto w-full max-w-5xl px-5 py-5 text-xs leading-relaxed text-muted-foreground">
+            Daftar kata dari silabus HSK 3.0 terbitan terbaru. Arti dari
+            CC-CEDICT dan CC-CIDICT, CC BY-SA 4.0.{" "}
+            <Link to="/about" className="underline underline-offset-4">
+              Sumber dan atribusi
+            </Link>
+            .
+          </div>
+        </footer>
+
         <TanStackDevtools
-          config={{
-            position: "bottom-right",
-          }}
+          config={{ position: "bottom-right" }}
           plugins={[
             {
               name: "Tanstack Router",
