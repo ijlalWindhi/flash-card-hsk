@@ -7,9 +7,19 @@ import {
 import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools"
 import { TanStackDevtools } from "@tanstack/react-devtools"
 
+import { AccountNav } from "@/components/account-nav"
+import { getCurrentUserFn } from "@/features/accounts/auth.functions"
 import appCss from "../styles.css?url"
 
 export const Route = createRootRoute({
+  /**
+   * Who is signed in, resolved once for every page.
+   *
+   * The header needs it everywhere, and the quiz needs it to decide whether a
+   * result can be saved. Returns null for a guest rather than failing, so the
+   * app still renders with no Firebase credentials configured.
+   */
+  loader: () => getCurrentUserFn(),
   head: () => ({
     meta: [
       { charSet: "utf-8" },
@@ -58,6 +68,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
               <Link to="/about" className="underline-offset-4 hover:underline">
                 Tentang
               </Link>
+              <AccountNav />
             </nav>
           </div>
         </header>

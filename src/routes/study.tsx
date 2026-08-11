@@ -1,9 +1,11 @@
-import { Link, createFileRoute } from "@tanstack/react-router"
+import { Link, createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useEffect, useState } from "react"
 import { EmptyState } from "@/components/empty-state"
+import { QuizStartDialog } from "@/components/quiz/quiz-start-dialog"
 import { StudyCard } from "@/components/study-card"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
+import { storeQuizDeck } from "@/features/quiz/session"
 import type { StudySession } from "@/features/flashcards/session"
 import { readStudySession } from "@/features/flashcards/session"
 
@@ -21,6 +23,7 @@ function StudyPage() {
   )
   const [index, setIndex] = useState(0)
   const [revealed, setRevealed] = useState(false)
+  const navigate = useNavigate()
 
   useEffect(() => {
     setSession(readStudySession())
@@ -94,6 +97,35 @@ function StudyPage() {
           Berikutnya
         </Button>
       </div>
+
+      {/*
+        The deck is finished, and recognising a word face-up is not the same as
+        recalling it. This is the moment that offer lands best, so it appears in
+        place rather than as something to go and find.
+      */}
+      {isLast ? (
+        <div className="mt-10 border-2 border-foreground bg-card p-6">
+          <p className="eyebrow text-mark">Deck selesai</p>
+          <h2 className="mt-2 text-xl font-medium tracking-tight">
+            Sudah hafal {session.cards.length} kata ini?
+          </h2>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Uji dengan quiz singkat — jawabannya tidak akan terlihat sampai kamu
+            menebak.
+          </p>
+          <div className="mt-5">
+            <QuizStartDialog
+              candidates={session.cards}
+              source="flashcard"
+              trigger={<Button>Uji kata-kata ini</Button>}
+              onStart={(deck) => {
+                storeQuizDeck(deck)
+                void navigate({ to: "/quiz" })
+              }}
+            />
+          </div>
+        </div>
+      ) : null}
     </main>
   )
 }

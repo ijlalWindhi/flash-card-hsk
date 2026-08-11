@@ -8,7 +8,7 @@ test("studies an explicitly selected card Hanzi-first", async ({ page }) => {
   await page.getByRole("searchbox", { name: /cari/i }).fill("anzhi")
 
   await page.getByRole("checkbox", { name: /安置 ānzhì/i }).check()
-  await page.getByRole("button", { name: /mulai 1 kartu/i }).click()
+  await page.getByRole("button", { name: /belajar 1 kartu/i }).click()
 
   const card = page.getByRole("button", { name: /flashcard/i })
   await expect(card).toContainText("安置")
@@ -48,7 +48,7 @@ test("moves through a deck with the keyboard and clamps at both ends", async ({
   const checkboxes = page.getByRole("checkbox")
   await checkboxes.nth(0).check()
   await checkboxes.nth(1).check()
-  await page.getByRole("button", { name: /mulai 2 kartu/i }).click()
+  await page.getByRole("button", { name: /belajar 2 kartu/i }).click()
 
   const progress = page.getByTestId("study-progress")
   await expect(progress).toHaveText("01 / 02")

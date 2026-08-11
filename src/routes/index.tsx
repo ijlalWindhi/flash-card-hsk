@@ -1,6 +1,8 @@
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router"
-import { useCallback, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { EmptyState } from "@/components/empty-state"
+import { HomeProgress } from "@/components/quiz/home-progress"
+import { QuizStartDialog } from "@/components/quiz/quiz-start-dialog"
 import { SessionSizeDialog } from "@/components/session-size-dialog"
 import { Button } from "@/components/ui/button"
 import { VocabularyList } from "@/components/vocabulary-list"
@@ -8,7 +10,9 @@ import {
   createStudySession,
   storeStudySession,
 } from "@/features/flashcards/session"
+import { storeQuizDeck } from "@/features/quiz/session"
 import { getVocabularyFn } from "@/features/vocabulary/vocabulary.functions"
+import type { QuizDeck } from "@/features/quiz/session"
 
 export const Route = createFileRoute("/")({
   component: VocabularyPage,
@@ -46,7 +50,17 @@ function VocabularyPage() {
     void navigate({ to: "/study" })
   }
 
+  /** Stores the deck and hands off to the quiz page. */
+  function startQuiz(deck: QuizDeck) {
+    storeQuizDeck(deck)
+    void navigate({ to: "/quiz" })
+  }
+
   const selectedCount = selectedIds.size
+  const selectedWords = useMemo(
+    () => items.filter((item) => selectedIds.has(item.id)),
+    [items, selectedIds]
+  )
 
   return (
     <main className="mx-auto w-full max-w-5xl px-5 pt-10 pb-32">
@@ -61,14 +75,25 @@ function VocabularyPage() {
             Daftar kosa kata
           </h1>
           <p className="mt-2 max-w-prose text-sm text-muted-foreground">
-            Pilih kata yang ingin dihafal, lalu mulai sesi. Belum tahu mau mulai
-            dari mana? Ambil beberapa kata secara acak.
+            Pilih kata yang ingin dihafal, lalu mulai sesi belajar atau langsung
+            uji dengan quiz. Belum tahu mau mulai dari mana? Ambil beberapa kata
+            secara acak.
           </p>
         </div>
         {selectedCount === 0 ? (
-          <SessionSizeDialog maxCount={items.length} onStart={startSession} />
+          <div className="flex flex-wrap gap-2">
+            <SessionSizeDialog maxCount={items.length} onStart={startSession} />
+            <QuizStartDialog
+              candidates={items}
+              source="random"
+              trigger={<Button>Quiz acak</Button>}
+              onStart={startQuiz}
+            />
+          </div>
         ) : null}
       </div>
+
+      <HomeProgress items={items} onStart={startQuiz} />
 
       <VocabularyList
         items={items}
@@ -90,8 +115,16 @@ function VocabularyPage() {
               >
                 Kosongkan
               </button>
+              <QuizStartDialog
+                candidates={selectedWords}
+                source="selected"
+                trigger={
+                  <Button variant="secondary">Quiz {selectedCount} kata</Button>
+                }
+                onStart={startQuiz}
+              />
               <Button variant="secondary" onClick={() => startSession(null)}>
-                Mulai {selectedCount} kartu
+                Belajar {selectedCount} kartu
               </Button>
             </div>
           </div>

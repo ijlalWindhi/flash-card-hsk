@@ -1,10 +1,6 @@
 import { memo } from "react"
+import { formatSenses } from "@/features/vocabulary/format"
 import type { VocabularyItem } from "@/features/vocabulary/types"
-
-/** Dictionary cells hold `;`-separated senses; commas read better on a card. */
-export function formatSenses(value: string): string {
-  return value.split(";").join(", ")
-}
 
 /**
  * One selectable word.

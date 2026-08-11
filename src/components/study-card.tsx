@@ -1,4 +1,4 @@
-import { formatSenses } from "@/components/vocabulary-card"
+import { formatSenses } from "@/features/vocabulary/format"
 import type { VocabularyItem } from "@/features/vocabulary/types"
 
 /**

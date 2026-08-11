@@ -24,6 +24,7 @@
   --font-hanzi: "Noto Serif SC Variable", "Noto Serif SC", ui-serif, serif;
 
   --color-mark: var(--mark);
+  --color-correct: var(--correct);
   --color-ring: var(--ring);
   --color-input: var(--input);
   --color-border: var(--border);
@@ -66,6 +67,10 @@
   --accent-foreground: #1c1b19;
   --destructive: #b3261e;
   --mark: #b3261e;
+  /* The quiz's only new colour. A muted ink green, chosen to sit at the same
+     weight as the warm red so a right answer does not shout louder than a
+     wrong one — and dark enough to pass contrast on the paper background. */
+  --correct: #2f6f4e;
   --border: #e4e1da;
   --input: #d8d4cc;
   --ring: #1c1b19;
