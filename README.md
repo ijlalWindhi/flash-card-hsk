@@ -8,8 +8,8 @@ deploys and maintains the app.
 
 - **Data**: `data/hsk4-3.0.csv`, joined from three licensed sources. See
   [`ATTRIBUTION.md`](ATTRIBUTION.md) and [`docs/dataset-provenance.md`](docs/dataset-provenance.md).
-- **Stack**: TanStack Start (React 19, Vite, Nitro), Tailwind + shadcn/ui, Drizzle ORM on
-  Turso/libSQL, Zod, Vitest, Playwright.
+- **Stack**: TanStack Start (React 19, Vite), Nitro for the deployable server build,
+  Tailwind + shadcn/ui, Drizzle ORM on Turso/libSQL, Zod, Vitest, Playwright.
 
 ## Requirements
 
@@ -69,11 +69,31 @@ node -e "console.log(crypto.randomBytes(32).toString('base64url'))"
 
 ## Deploying to Vercel
 
-Vercel detects TanStack Start and builds it through Nitro. **Do not set an output
-directory, add a `vercel.json` rewrite, or add an `app.config.ts`** — the Vite config in
-`vite.config.ts` is the whole build configuration, and a stray rewrite will shadow the
-server routes that the app's own server functions live on. Set the project's Node.js
-version to 20 or later.
+This app is server-rendered and its server functions are real HTTP endpoints, so the
+deployment needs a function — not a folder of static files.
+
+**That function comes from Nitro.** `nitro()` is in `vite.config.ts`, and it is the piece
+that makes the build deployable: on Vercel it detects the platform and writes the
+[Build Output API](https://vercel.com/docs/build-output-api) tree at `.vercel/output/`,
+with the client assets under `static/` and the SSR handler as
+`functions/__server.func`. Locally the same build produces `.output/` for Node.
+
+Without it, `npm run build` only leaves `dist/client` and `dist/server`. Uploading that
+gives you a site with no `index.html` at its root and no handler — every request answers
+`404: NOT_FOUND`.
+
+Project settings:
+
+| Setting          | Value                                                          |
+| ---------------- | -------------------------------------------------------------- |
+| Framework Preset | `Other` — Vercel's `Vite` preset publishes `dist/` as static.  |
+| Build Command    | Leave as `npm run build`.                                      |
+| Output Directory | Leave empty. `.vercel/output` takes precedence over any value. |
+| Node.js Version  | 20 or later.                                                   |
+
+**Do not add a `vercel.json` rewrite or an `app.config.ts`.** A catch-all rewrite to
+`index.html` shadows the routes the server functions live on, and
+`@tanstack/react-start/config` is not a subpath this version exports.
 
 ### 1. Create the database
 
