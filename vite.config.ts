@@ -5,8 +5,26 @@ import viteReact from "@vitejs/plugin-react"
 import tailwindcss from "@tailwindcss/vite"
 import { nitro } from "nitro/vite"
 
+/**
+ * Packages Nitro must not bundle.
+ *
+ * `firebase-admin` pulls in `@google-cloud/firestore`, which is CommonJS and
+ * locates its gRPC `.proto` files through `__dirname` at runtime. Bundled into
+ * an ESM server that identifier does not exist, and every render that touches
+ * the module dies with "__dirname is not defined in ES module scope" — which
+ * took down every SSR route, not just the ones using accounts.
+ *
+ * Left external, Node loads it from `node_modules` as the CommonJS package it
+ * is, and its own file lookups resolve. Nitro traces it into the output.
+ */
+const SERVER_EXTERNALS = [/^firebase-admin(\/|$)/]
+
 const config = defineConfig({
   resolve: { tsconfigPaths: true },
+  nitro: {
+    rollupConfig: { external: SERVER_EXTERNALS },
+    traceDeps: ["firebase-admin*"],
+  },
   /**
    * `nitro()` is what makes this deployable.
    *
