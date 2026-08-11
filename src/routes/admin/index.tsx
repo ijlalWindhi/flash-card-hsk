@@ -67,13 +67,11 @@ function AdminPage() {
             editing={editing}
             onCancelEdit={() => setEditing(null)}
             onSubmit={async (input): Promise<Array<FieldError> | null> => {
-              console.log("DBG submit", JSON.stringify(input))
               const result = editing
                 ? await updateManualVocabularyFn({
                     data: { ...input, id: editing.id },
                   })
                 : await createManualVocabularyFn({ data: input })
-              console.log("DBG result", JSON.stringify(result))
 
               if (!result.ok) return result.errors
 

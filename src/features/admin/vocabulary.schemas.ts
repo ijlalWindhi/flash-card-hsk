@@ -9,7 +9,11 @@ import { z } from "zod"
  */
 export const manualVocabularySchema = z.object({
   id: z.string().uuid().optional(),
-  hanzi: z.string().trim().min(1, "Hanzi wajib diisi.").max(40, "Hanzi terlalu panjang."),
+  hanzi: z
+    .string()
+    .trim()
+    .min(1, "Hanzi wajib diisi.")
+    .max(40, "Hanzi terlalu panjang."),
   pinyin: z
     .string()
     .trim()
@@ -35,8 +39,7 @@ export type MutationField = keyof ManualVocabularyInput | "form"
 export type FieldError = { field: MutationField; message: string }
 
 export type MutationResult<T> =
-  | { ok: true; data: T }
-  | { ok: false; errors: Array<FieldError> }
+  { ok: true; data: T } | { ok: false; errors: Array<FieldError> }
 
 export function toFieldErrors(error: z.ZodError): Array<FieldError> {
   return error.issues.map((issue) => ({

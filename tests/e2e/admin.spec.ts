@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test"
 import { E2E_ADMIN_PASSWORD } from "./env"
+import { openVocabularyList } from "./helpers"
 
 async function signIn(page: import("@playwright/test").Page) {
   await page.goto("/admin/login")
@@ -23,7 +24,9 @@ test("refuses a wrong password without revealing why", async ({ page }) => {
   await expect(page).toHaveURL(/\/admin\/login$/)
 })
 
-test("allows the administrator to add and remove a manual word", async ({ page }) => {
+test("allows the administrator to add and remove a manual word", async ({
+  page,
+}) => {
   await signIn(page)
 
   await page.getByLabel("Hanzi").fill("例词")
@@ -36,7 +39,7 @@ test("allows the administrator to add and remove a manual word", async ({ page }
   await expect(row).toBeVisible()
 
   // The new word reaches the public deck too.
-  await page.goto("/")
+  await openVocabularyList(page)
   await page.getByRole("searchbox", { name: /cari/i }).fill("lici")
   await expect(page.getByRole("checkbox", { name: /例词 lìcí/i })).toBeVisible()
 
@@ -45,7 +48,9 @@ test("allows the administrator to add and remove a manual word", async ({ page }
   await expect(page.getByRole("row", { name: /例词/ })).toHaveCount(0)
 })
 
-test("reports a duplicate word beside the field that caused it", async ({ page }) => {
+test("reports a duplicate word beside the field that caused it", async ({
+  page,
+}) => {
   await signIn(page)
 
   for (const attempt of [1, 2]) {
@@ -57,12 +62,14 @@ test("reports a duplicate word beside the field that caused it", async ({ page }
   }
 
   await expect(
-    page.getByText("Kata dengan hanzi dan pinyin ini sudah ada."),
+    page.getByText("Kata dengan hanzi dan pinyin ini sudah ada.")
   ).toBeVisible()
   await expect(page.getByLabel("Arti Indonesia")).toHaveValue("duplikat 2")
 })
 
-test("reports missing fields without contacting the server", async ({ page }) => {
+test("reports missing fields without contacting the server", async ({
+  page,
+}) => {
   await signIn(page)
 
   await page.getByLabel("Hanzi").fill("测试")

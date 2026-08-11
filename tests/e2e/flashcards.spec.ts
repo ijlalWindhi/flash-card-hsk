@@ -1,19 +1,5 @@
-import type { Page } from "@playwright/test"
 import { expect, test } from "@playwright/test"
-
-/**
- * Opens the deck and waits for React to take over the server-rendered markup.
- *
- * Without this a click can land on hydrated-looking HTML before the handlers
- * are attached, and the selection is silently dropped.
- */
-async function openVocabularyList(page: Page) {
-  await page.goto("/")
-  await expect(page.getByTestId("vocabulary-list")).toHaveAttribute(
-    "data-interactive",
-    "true"
-  )
-}
+import { openVocabularyList } from "./helpers"
 
 test("studies an explicitly selected card Hanzi-first", async ({ page }) => {
   await openVocabularyList(page)
@@ -84,10 +70,14 @@ test("narrows the deck from any field and reports the count", async ({
   page,
 }) => {
   await openVocabularyList(page)
+  // At least the 1,000 official words; the admin suite may have added its own,
+  // so the deck is asserted as a floor rather than an exact number.
   const count = page.getByText(/^\d+ kata$/)
-  await expect(count).toHaveText("1000 kata")
+  const total = Number((await count.innerText()).replace(/\D/g, ""))
+  expect(total).toBeGreaterThanOrEqual(1000)
 
   await page.getByRole("searchbox", { name: /cari/i }).fill("mengatur")
+  await expect(count).not.toHaveText(`${total} kata`)
   await expect(
     page.getByRole("checkbox", { name: /安置 ānzhì/i })
   ).toBeVisible()

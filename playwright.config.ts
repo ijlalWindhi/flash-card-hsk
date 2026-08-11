@@ -14,14 +14,15 @@ export default defineConfig({
   forbidOnly: Boolean(process.env.CI),
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? "line" : "list",
-  globalSetup: "./tests/e2e/global-setup.ts",
   use: {
     baseURL: E2E_BASE_URL,
     trace: "on-first-retry",
   },
   projects: [{ name: "chromium", use: devices["Desktop Chrome"] }],
   webServer: {
-    command: `npx vite dev --port ${E2E_PORT}`,
+    // The schema must exist before the server answers its first request, so
+    // migrating and seeding is part of starting the server, not a setup hook.
+    command: `npx tsx tests/e2e/prepare-database.ts && npx vite dev --port ${E2E_PORT}`,
     url: E2E_BASE_URL,
     reuseExistingServer: false,
     timeout: 180_000,

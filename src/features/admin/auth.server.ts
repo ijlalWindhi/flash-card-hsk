@@ -1,5 +1,8 @@
 import { timingSafeEqual } from "node:crypto"
-import { getRequestHeader, setResponseHeader } from "@tanstack/react-start/server"
+import {
+  getRequestHeader,
+  setResponseHeader,
+} from "@tanstack/react-start/server"
 import { parseCookie, stringifySetCookie } from "cookie"
 import { SignJWT, jwtVerify } from "jose"
 
@@ -20,7 +23,7 @@ function signingKey(secret: string): Uint8Array {
  */
 export function issueAdminToken(
   secret: string,
-  ttlSeconds: number = SESSION_TTL_SECONDS,
+  ttlSeconds: number = SESSION_TTL_SECONDS
 ): Promise<string> {
   const now = Math.floor(Date.now() / 1000)
   return new SignJWT({ role: "admin" })
@@ -32,7 +35,7 @@ export function issueAdminToken(
 
 export async function isValidAdminToken(
   token: string | undefined,
-  secret: string,
+  secret: string
 ): Promise<boolean> {
   if (!token) return false
   try {
@@ -54,7 +57,7 @@ export async function isValidAdminToken(
  */
 export function isAdminPassword(
   submitted: string,
-  expected: string | undefined,
+  expected: string | undefined
 ): boolean {
   if (!expected) return false
 
@@ -109,7 +112,7 @@ export function readAdminSecret(): string {
   const secret = process.env.ADMIN_SESSION_SECRET
   if (!secret || secret.length < 32) {
     throw new Error(
-      "ADMIN_SESSION_SECRET must be set to at least 32 characters. See .env.example.",
+      "ADMIN_SESSION_SECRET must be set to at least 32 characters. See .env.example."
     )
   }
   return secret
@@ -138,7 +141,7 @@ export async function requireAdmin(): Promise<void> {
 
 /** Checks the password and, on success, sets the session cookie. */
 export async function startAdminSession(
-  password: string,
+  password: string
 ): Promise<{ ok: true } | { ok: false; message: string }> {
   // One generic message: distinguishing "no password configured" from "wrong
   // password" tells an attacker more than it tells a legitimate admin.
@@ -146,7 +149,10 @@ export async function startAdminSession(
     return { ok: false, message: "Kata sandi salah." }
   }
 
-  setResponseHeader("Set-Cookie", serializeAdminCookie(await issueAdminToken(readAdminSecret())))
+  setResponseHeader(
+    "Set-Cookie",
+    serializeAdminCookie(await issueAdminToken(readAdminSecret()))
+  )
   return { ok: true }
 }
 
