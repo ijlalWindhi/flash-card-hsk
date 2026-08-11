@@ -8,11 +8,20 @@ import { vocabulary as vocabularyTable } from "../src/db/schema"
 import type { VocabularyDatabase } from "../src/db/client.server"
 import {
   countVocabulary,
+  deleteManualVocabulary,
   getVocabularyByHanzi,
   insertManualVocabulary,
+  listManualVocabulary,
   seedOfficialVocabulary,
   selectVocabulary,
+  updateManualVocabulary,
 } from "../src/features/vocabulary/vocabulary.server"
+import {
+  isAdminPassword,
+  isValidAdminToken,
+  issueAdminToken,
+} from "../src/features/admin/auth.server"
+import { manualVocabularySchema } from "../src/features/admin/vocabulary.schemas"
 import type { VocabularyCsvRow } from "../scripts/validate-hsk4-dataset"
 
 const officialRow: VocabularyCsvRow = {
@@ -138,5 +147,114 @@ describe("selectVocabulary", () => {
       "translationEn",
       "translationId",
     ])
+  })
+})
+
+describe("admin session tokens", () => {
+  const secret = "a-secret-that-is-at-least-32-bytes-long"
+
+  it("accepts a token it just issued", async () => {
+    const token = await issueAdminToken(secret)
+    expect(await isValidAdminToken(token, secret)).toBe(true)
+  })
+
+  it("rejects a token signed with a different secret", async () => {
+    const token = await issueAdminToken(secret)
+    expect(await isValidAdminToken(token, `${secret}-other`)).toBe(false)
+  })
+
+  it("rejects an expired token", async () => {
+    const token = await issueAdminToken(secret, -60)
+    expect(await isValidAdminToken(token, secret)).toBe(false)
+  })
+
+  it("rejects a tampered or missing token", async () => {
+    const token = await issueAdminToken(secret)
+    expect(await isValidAdminToken(`${token}x`, secret)).toBe(false)
+    expect(await isValidAdminToken(undefined, secret)).toBe(false)
+    expect(await isValidAdminToken("", secret)).toBe(false)
+  })
+})
+
+describe("admin password check", () => {
+  it("accepts only the configured password", () => {
+    expect(isAdminPassword("correct horse", "correct horse")).toBe(true)
+    // Same length, so the comparison cannot short-circuit on length alone.
+    expect(isAdminPassword("correct horsf", "correct horse")).toBe(false)
+    expect(isAdminPassword("short", "correct horse")).toBe(false)
+  })
+
+  it("refuses to authenticate when no password is configured", () => {
+    expect(isAdminPassword("anything", undefined)).toBe(false)
+    expect(isAdminPassword("", "")).toBe(false)
+  })
+})
+
+describe("manual vocabulary validation", () => {
+  it("requires every field and trims what it accepts", () => {
+    const result = manualVocabularySchema.safeParse({
+      hanzi: "  例词  ",
+      pinyin: "lìcí",
+      translationId: "contoh kata",
+      translationEn: "example word",
+    })
+    expect(result.success).toBe(true)
+    expect(result.data?.hanzi).toBe("例词")
+
+    const missing = manualVocabularySchema.safeParse({
+      hanzi: "   ",
+      pinyin: "",
+      translationId: "",
+      translationEn: "",
+    })
+    expect(missing.success).toBe(false)
+  })
+})
+
+describe("manual vocabulary mutations", () => {
+  it("updates and deletes a manual row", async () => {
+    const created = await insertManualVocabulary(db, manualRow)
+
+    const updated = await updateManualVocabulary(db, created.id, {
+      ...manualRow,
+      translationId: "kata contoh",
+    })
+    expect(updated?.translationId).toBe("kata contoh")
+
+    expect(await deleteManualVocabulary(db, created.id)).toBe(true)
+    expect(await countVocabulary(db)).toBe(0)
+  })
+
+  it("refuses to change or remove an official row", async () => {
+    await seedOfficialVocabulary(db, [officialRow])
+    const id = `official:${officialRow.external_id}`
+
+    expect(
+      await updateManualVocabulary(db, id, { ...manualRow, hanzi: "篡改" })
+    ).toBeUndefined()
+    expect(await deleteManualVocabulary(db, id)).toBe(false)
+
+    expect(await getVocabularyByHanzi(db, officialRow.hanzi)).toMatchObject({
+      kind: "official",
+      translationId: officialRow.translation_id,
+    })
+  })
+
+  it("recomputes the sort key when the pronunciation changes", async () => {
+    const created = await insertManualVocabulary(db, manualRow)
+
+    const updated = await updateManualVocabulary(db, created.id, {
+      ...manualRow,
+      pinyin: "ǍN PÁI",
+    })
+    expect(updated?.pinyinSortKey).toBe("anpai")
+  })
+
+  it("lists only manual rows", async () => {
+    await seedOfficialVocabulary(db, [officialRow])
+    await insertManualVocabulary(db, manualRow)
+
+    const listed = await listManualVocabulary(db)
+    expect(listed.map((entry) => entry.hanzi)).toEqual([manualRow.hanzi])
   })
 })

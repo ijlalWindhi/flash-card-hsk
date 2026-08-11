@@ -1,10 +1,11 @@
 import { randomUUID } from "node:crypto"
-import { asc, count, eq } from "drizzle-orm"
+import { and, asc, count, eq } from "drizzle-orm"
 import { getDatabase } from "@/db/client.server"
 import type { VocabularyDatabase } from "@/db/client.server"
 import type { NewVocabularyRecord, VocabularyRecord } from "@/db/schema"
 import { vocabulary } from "@/db/schema"
 import type { VocabularyCsvRow } from "../../../scripts/validate-hsk4-dataset"
+import type { ManualVocabularyInput as ManualVocabularySchemaInput } from "@/features/admin/vocabulary.schemas"
 import { normalizePinyin } from "./normalize"
 import type { VocabularyItem } from "./types"
 
@@ -124,6 +125,62 @@ export function selectVocabulary(
 /** The handler behind `getVocabularyFn`; resolves the database itself. */
 export function getVocabulary(): Promise<Array<VocabularyItem>> {
   return selectVocabulary(getDatabase())
+}
+
+/** The administrator's own entries — the only rows they may edit or remove. */
+export function listManualVocabulary(
+  db: VocabularyDatabase
+): Promise<Array<VocabularyItem>> {
+  return db
+    .select({
+      id: vocabulary.id,
+      hanzi: vocabulary.hanzi,
+      pinyin: vocabulary.pinyin,
+      pinyinSortKey: vocabulary.pinyinSortKey,
+      translationId: vocabulary.translationId,
+      translationEn: vocabulary.translationEn,
+      kind: vocabulary.kind,
+    })
+    .from(vocabulary)
+    .where(eq(vocabulary.kind, "manual"))
+    .orderBy(asc(vocabulary.pinyinSortKey), asc(vocabulary.hanzi))
+}
+
+/**
+ * Edits a manual entry. Returns undefined when the ID belongs to an official
+ * row, so seeded provenance can never be rewritten through the admin screen.
+ */
+export async function updateManualVocabulary(
+  db: VocabularyDatabase,
+  id: string,
+  input: ManualVocabularySchemaInput
+): Promise<VocabularyRecord | undefined> {
+  const [record] = await db
+    .update(vocabulary)
+    .set({
+      hanzi: input.hanzi,
+      pinyin: input.pinyin,
+      pinyinSortKey: normalizePinyin(input.pinyin),
+      translationId: input.translationId,
+      translationEn: input.translationEn,
+      updatedAt: new Date(),
+    })
+    .where(and(eq(vocabulary.id, id), eq(vocabulary.kind, "manual")))
+    .returning()
+
+  return record
+}
+
+/** Removes a manual entry. Official rows are left alone and report `false`. */
+export async function deleteManualVocabulary(
+  db: VocabularyDatabase,
+  id: string
+): Promise<boolean> {
+  const result = await db
+    .delete(vocabulary)
+    .where(and(eq(vocabulary.id, id), eq(vocabulary.kind, "manual")))
+
+  return result.rowsAffected > 0
 }
 
 export async function countVocabulary(db: VocabularyDatabase): Promise<number> {
