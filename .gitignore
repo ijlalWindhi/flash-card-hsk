@@ -3,6 +3,14 @@
 .env.*
 !.env.example
 node_modules/
+.DS_Store
+dist-ssr/
+*.local
+.tanstack/
+.wrangler/
+.vinxi/
+__unconfig*/
+todos.json
 .vercel/
 dist/
 .output/
