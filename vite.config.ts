@@ -5,24 +5,25 @@ import viteReact from "@vitejs/plugin-react"
 import tailwindcss from "@tailwindcss/vite"
 import { nitro } from "nitro/vite"
 
-/**
- * Packages Nitro must not bundle.
- *
- * `firebase-admin` pulls in `@google-cloud/firestore`, which is CommonJS and
- * locates its gRPC `.proto` files through `__dirname` at runtime. Bundled into
- * an ESM server that identifier does not exist, and every render that touches
- * the module dies with "__dirname is not defined in ES module scope" — which
- * took down every SSR route, not just the ones using accounts.
- *
- * Left external, Node loads it from `node_modules` as the CommonJS package it
- * is, and its own file lookups resolve. Nitro traces it into the output.
- */
-const SERVER_EXTERNALS = [/^firebase-admin(\/|$)/]
-
 const config = defineConfig({
   resolve: { tsconfigPaths: true },
   nitro: {
-    rollupConfig: { external: SERVER_EXTERNALS },
+    /**
+     * Keep `firebase-admin` out of the bundle and copy it into the output.
+     *
+     * It pulls in `@google-cloud/firestore`, a CommonJS package that finds its
+     * gRPC `.proto` files through `__dirname`. Bundled into an ESM server that
+     * identifier does not exist, so the module threw "__dirname is not defined
+     * in ES module scope" — and because the root route loads the session, that
+     * took down *every* SSR route, not only the ones using accounts. Vite
+     * leaves node_modules external in development, which is why this appeared
+     * only once deployed.
+     *
+     * `traceDeps` is the knob that both externalises the package and traces it
+     * — with its `.proto` files — into the server output. Marking it external
+     * through `rollupConfig` instead stops the bundling but skips the tracing,
+     * which trades the crash for a missing module.
+     */
     traceDeps: ["firebase-admin*"],
   },
   /**
