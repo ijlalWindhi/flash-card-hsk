@@ -92,3 +92,26 @@ test("explains an empty session instead of showing a blank card", async ({
   await page.getByRole("link", { name: /daftar kosa kata/i }).click()
   await expect(page).toHaveURL("/")
 })
+
+test("discloses the HSK source and dictionary attribution", async ({
+  page,
+}) => {
+  await page.goto("/about")
+
+  await expect(
+    page.getByText(/HSK 3\.0 \(latest published syllabus\)/i)
+  ).toBeVisible()
+  await expect(page.getByRole("link", { name: /CC-CEDICT/i })).toHaveAttribute(
+    "href",
+    /cc-cedict\.org/
+  )
+  await expect(page.getByRole("link", { name: /CC-CIDICT/i })).toHaveAttribute(
+    "href",
+    /cidict\.org/
+  )
+  await expect(
+    page.getByRole("link", { name: /CC BY-SA 4\.0/i })
+  ).toHaveAttribute("href", /creativecommons\.org\/licenses\/by-sa\/4\.0/)
+  // The pilot-status caveat must be on the page, not just in the repo.
+  await expect(page.getByText(/uji coba|pilot/i).first()).toBeVisible()
+})
