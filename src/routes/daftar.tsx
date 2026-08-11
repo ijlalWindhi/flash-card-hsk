@@ -6,8 +6,18 @@ import {
 } from "@tanstack/react-router"
 import { AccountForm } from "@/components/account-form"
 import { registerFn } from "@/features/accounts/auth.functions"
+import { seo } from "@/lib/seo"
 
-export const Route = createFileRoute("/daftar")({ component: RegisterPage })
+export const Route = createFileRoute("/daftar")({
+  component: RegisterPage,
+  head: () =>
+    seo({
+      title: "Daftar Akun",
+      description:
+        "Buat akun Han.note gratis untuk menyimpan progres belajar kosa kata HSK 4, melacak kata yang sering salah, dan menjaga hari beruntunmu.",
+      path: "/daftar",
+    }),
+})
 
 function RegisterPage() {
   const navigate = useNavigate()

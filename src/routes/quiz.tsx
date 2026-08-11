@@ -6,10 +6,20 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { minimumWordsFor } from "@/features/quiz/build"
 import { readQuizDeck, storeQuizDeck } from "@/features/quiz/session"
 import { MODE_LABELS } from "@/features/quiz/types"
+import { seo } from "@/lib/seo"
 import type { QuizDeck } from "@/features/quiz/session"
 import type { VocabularyItem } from "@/features/vocabulary/types"
 
-export const Route = createFileRoute("/quiz")({ component: QuizPage })
+export const Route = createFileRoute("/quiz")({
+  component: QuizPage,
+  head: () =>
+    seo({
+      title: "Quiz HSK 4 — Empat Mode Latihan Kosa Kata",
+      description:
+        "Uji hafalan kosa kata HSK 4 lewat empat mode: pilihan ganda, benar atau salah, mengetik, dan menjodohkan. Hasil tersimpan beserta hari beruntunmu.",
+      path: "/quiz",
+    }),
+})
 
 function QuizPage() {
   // `undefined` means "not read yet": session storage only exists after

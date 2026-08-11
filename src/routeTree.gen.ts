@@ -14,6 +14,8 @@ import { Route as AboutRouteImport } from './routes/about'
 import { Route as DaftarRouteImport } from './routes/daftar'
 import { Route as MasukRouteImport } from './routes/masuk'
 import { Route as QuizRouteImport } from './routes/quiz'
+import { Route as RobotsDottxtRouteImport } from './routes/robots[.]txt'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as StudyRouteImport } from './routes/study'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminLoginRouteImport } from './routes/admin/login'
@@ -43,6 +45,16 @@ const QuizRoute = QuizRouteImport.update({
   path: '/quiz',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RobotsDottxtRoute = RobotsDottxtRouteImport.update({
+  id: '/robots.txt',
+  path: '/robots.txt',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StudyRoute = StudyRouteImport.update({
   id: '/study',
   path: '/study',
@@ -65,6 +77,8 @@ export interface FileRoutesByFullPath {
   '/daftar': typeof DaftarRoute
   '/masuk': typeof MasukRoute
   '/quiz': typeof QuizRoute
+  '/robots.txt': typeof RobotsDottxtRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/study': typeof StudyRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/': typeof AdminIndexRoute
@@ -75,6 +89,8 @@ export interface FileRoutesByTo {
   '/daftar': typeof DaftarRoute
   '/masuk': typeof MasukRoute
   '/quiz': typeof QuizRoute
+  '/robots.txt': typeof RobotsDottxtRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/study': typeof StudyRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin': typeof AdminIndexRoute
@@ -86,6 +102,8 @@ export interface FileRoutesById {
   '/daftar': typeof DaftarRoute
   '/masuk': typeof MasukRoute
   '/quiz': typeof QuizRoute
+  '/robots.txt': typeof RobotsDottxtRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/study': typeof StudyRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/': typeof AdminIndexRoute
@@ -98,6 +116,8 @@ export interface FileRouteTypes {
     | '/daftar'
     | '/masuk'
     | '/quiz'
+    | '/robots.txt'
+    | '/sitemap.xml'
     | '/study'
     | '/admin/login'
     | '/admin/'
@@ -108,6 +128,8 @@ export interface FileRouteTypes {
     | '/daftar'
     | '/masuk'
     | '/quiz'
+    | '/robots.txt'
+    | '/sitemap.xml'
     | '/study'
     | '/admin/login'
     | '/admin'
@@ -118,6 +140,8 @@ export interface FileRouteTypes {
     | '/daftar'
     | '/masuk'
     | '/quiz'
+    | '/robots.txt'
+    | '/sitemap.xml'
     | '/study'
     | '/admin/login'
     | '/admin/'
@@ -129,6 +153,8 @@ export interface RootRouteChildren {
   DaftarRoute: typeof DaftarRoute
   MasukRoute: typeof MasukRoute
   QuizRoute: typeof QuizRoute
+  RobotsDottxtRoute: typeof RobotsDottxtRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   StudyRoute: typeof StudyRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -171,6 +197,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof QuizRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/robots.txt': {
+      id: '/robots.txt'
+      path: '/robots.txt'
+      fullPath: '/robots.txt'
+      preLoaderRoute: typeof RobotsDottxtRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/study': {
       id: '/study'
       path: '/study'
@@ -201,6 +241,8 @@ const rootRouteChildren: RootRouteChildren = {
   DaftarRoute: DaftarRoute,
   MasukRoute: MasukRoute,
   QuizRoute: QuizRoute,
+  RobotsDottxtRoute: RobotsDottxtRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
   StudyRoute: StudyRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminIndexRoute: AdminIndexRoute,

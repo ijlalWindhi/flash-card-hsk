@@ -9,6 +9,8 @@ import { TanStackDevtools } from "@tanstack/react-devtools"
 
 import { AccountNav } from "@/components/account-nav"
 import { getCurrentUserFn } from "@/features/accounts/auth.functions"
+import { pageTitle } from "@/lib/seo"
+import { SITE_LOCALE, SITE_NAME, absoluteUrl, OG_IMAGE_PATH } from "@/lib/site"
 import appCss from "../styles.css?url"
 
 export const Route = createRootRoute({
@@ -20,18 +22,45 @@ export const Route = createRootRoute({
    * app still renders with no Firebase credentials configured.
    */
   loader: () => getCurrentUserFn(),
+  /**
+   * The head every page shares.
+   *
+   * Only site-wide invariants and fallbacks belong here. TanStack walks matched
+   * routes deepest-first and keeps the first `title` plus the first meta for any
+   * given `name`/`property`, so anything a page sets through `seo()` wins over
+   * what is written below — and a page that sets nothing still gets a sensible
+   * title, description and card.
+   *
+   * There is deliberately no canonical link. Links are concatenated rather than
+   * deduplicated by `rel`, so one here would render alongside every page's own
+   * and the two would name different URLs for the same document.
+   */
   head: () => ({
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { title: "Han.note — kosa kata HSK 4" },
+      { title: pageTitle("Kosa Kata HSK 4") },
       {
         name: "description",
         content:
           "Hafalkan 1.000 kata yang diperkenalkan di HSK 3.0 tingkat 4, dengan arti Indonesia dan Inggris.",
       },
+      { name: "theme-color", content: "#faf9f7" },
+      { property: "og:site_name", content: SITE_NAME },
+      { property: "og:locale", content: SITE_LOCALE },
+      { property: "og:type", content: "website" },
+      { property: "og:image", content: absoluteUrl(OG_IMAGE_PATH) },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
-    links: [{ rel: "stylesheet", href: appCss }],
+    links: [
+      { rel: "stylesheet", href: appCss },
+      // SVG first for browsers that take it; the .ico stays for those that do
+      // not, and for the bookmark and taskbar surfaces that still read it.
+      { rel: "icon", href: "/favicon.svg", type: "image/svg+xml" },
+      { rel: "icon", href: "/favicon.ico", sizes: "48x48" },
+      { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
+      { rel: "manifest", href: "/manifest.json" },
+    ],
   }),
   notFoundComponent: () => (
     <main className="mx-auto w-full max-w-3xl px-5 py-24">

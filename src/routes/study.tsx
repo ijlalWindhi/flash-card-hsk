@@ -6,10 +6,20 @@ import { StudyCard } from "@/components/study-card"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { storeQuizDeck } from "@/features/quiz/session"
+import { seo } from "@/lib/seo"
 import type { StudySession } from "@/features/flashcards/session"
 import { readStudySession } from "@/features/flashcards/session"
 
-export const Route = createFileRoute("/study")({ component: StudyPage })
+export const Route = createFileRoute("/study")({
+  component: StudyPage,
+  head: () =>
+    seo({
+      title: "Flashcard HSK 4 — Hafalkan Hanzi Satu per Satu",
+      description:
+        "Latihan flashcard kosa kata HSK 4. Kartu menampilkan hanzi lebih dulu — balik untuk melihat pinyin dan artinya. Atur jumlah kartu tiap sesi.",
+      path: "/study",
+    }),
+})
 
 function pad(value: number): string {
   return String(value).padStart(2, "0")

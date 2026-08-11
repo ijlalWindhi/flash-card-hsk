@@ -1,8 +1,18 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { AdminLoginForm } from "@/components/admin-login-form"
 import { loginFn } from "@/features/admin/auth.functions"
+import { seo } from "@/lib/seo"
 
-export const Route = createFileRoute("/admin/login")({ component: AdminLoginPage })
+export const Route = createFileRoute("/admin/login")({
+  component: AdminLoginPage,
+  head: () =>
+    seo({
+      title: "Masuk Admin",
+      description: "Halaman masuk pengelola kosa kata.",
+      path: "/admin/login",
+      noindex: true,
+    }),
+})
 
 function AdminLoginPage() {
   const navigate = useNavigate()

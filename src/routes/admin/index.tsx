@@ -11,12 +11,20 @@ import {
   listManualVocabularyFn,
   updateManualVocabularyFn,
 } from "@/features/admin/vocabulary.functions"
+import { seo } from "@/lib/seo"
 import type { FieldError } from "@/features/admin/vocabulary.schemas"
 import type { VocabularyItem } from "@/features/vocabulary/types"
 
 export const Route = createFileRoute("/admin/")({
   component: AdminPage,
   errorComponent: AdminUnavailable,
+  head: () =>
+    seo({
+      title: "Kelola Kata",
+      description: "Halaman pengelolaan kosa kata.",
+      path: "/admin",
+      noindex: true,
+    }),
   loader: async () => {
     const session = await getAdminSessionFn()
     if (!session.authenticated) throw redirect({ to: "/admin/login" })

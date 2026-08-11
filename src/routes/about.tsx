@@ -1,10 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router"
+import { seo } from "@/lib/seo"
 
 export const Route = createFileRoute("/about")({
   component: AboutPage,
-  head: () => ({
-    meta: [{ title: "Sumber dan atribusi — Han.note" }],
-  }),
+  head: () =>
+    seo({
+      title: "Sumber Data dan Atribusi",
+      description:
+        "Dari mana daftar kata HSK 4 di Han.note berasal, lisensi tiap sumbernya, dan bagaimana arti bahasa Indonesia serta Inggris disusun.",
+      path: "/about",
+    }),
 })
 
 const SYLLABUS_URL =

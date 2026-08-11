@@ -6,8 +6,18 @@ import {
 } from "@tanstack/react-router"
 import { AccountForm } from "@/components/account-form"
 import { loginFn } from "@/features/accounts/auth.functions"
+import { seo } from "@/lib/seo"
 
-export const Route = createFileRoute("/masuk")({ component: SignInPage })
+export const Route = createFileRoute("/masuk")({
+  component: SignInPage,
+  head: () =>
+    seo({
+      title: "Masuk",
+      description:
+        "Masuk ke Han.note untuk menyimpan hasil quiz, melacak kata yang sering salah, dan menjaga hari beruntun belajar kosa kata HSK 4.",
+      path: "/masuk",
+    }),
+})
 
 function SignInPage() {
   const navigate = useNavigate()

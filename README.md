@@ -42,9 +42,15 @@ TURSO_DATABASE_URL=file:./.cache/dev.db
 | `ADMIN_PASSWORD`       | The single administrator password for `/admin/login`.        |
 | `ADMIN_SESSION_SECRET` | HMAC key for the admin session cookie; 32+ characters.       |
 | `E2E_ADMIN_PASSWORD`   | Playwright only. Never a production value.                   |
+| `VITE_SITE_URL`        | Optional. Overrides the canonical domain. **Public.**        |
 
-All four are read on the server only. None may be prefixed `VITE_`, which would put them
-in the browser bundle.
+Everything above except `VITE_SITE_URL` is read on the server only, and none of it may
+be prefixed `VITE_` — that prefix is what puts a value into the browser bundle.
+
+`VITE_SITE_URL` carries the prefix precisely because it *must* reach the browser: it
+builds canonical and Open Graph URLs inside `head()`, which runs on both sides. It holds
+a public address and no secret. Leave it unset to use the domain baked into
+[`src/lib/site.ts`](src/lib/site.ts).
 
 Generate a session secret with:
 
@@ -66,6 +72,7 @@ node -e "console.log(crypto.randomBytes(32).toString('base64url'))"
 | `npm run db:generate`   | Generate a Drizzle migration from `src/db/schema.ts`.          |
 | `npm run db:migrate`    | Apply migrations.                                              |
 | `npm run db:seed`       | Import the CSV. Idempotent — safe to re-run.                   |
+| `npm run icons:build`   | Re-render the favicon, app icons and OG card into `public/`.   |
 
 ## Deploying to Vercel
 
@@ -142,6 +149,52 @@ Then check, in order:
 4. `/admin` redirects to `/admin/login`; a wrong password is refused.
 5. Sign in, add a word, confirm it appears on `/`, then delete it.
 6. `/about` shows the source links and the CC BY-SA 4.0 notice.
+7. `/robots.txt` names the sitemap at the deployed domain, not `localhost`.
+8. `/sitemap.xml` returns XML listing six URLs, none of them under `/admin`.
+9. View source on `/`: exactly one `<link rel="canonical">`, and it matches the page.
+
+## SEO and icons
+
+Every page sets its own title, description, canonical and social card through
+`seo()` in [`src/lib/seo.ts`](src/lib/seo.ts). The root route supplies only
+site-wide fallbacks — TanStack keeps the first `title` and the first meta per
+`name`/`property` walking matches deepest-first, so a page overrides the root by
+saying nothing more than what it changes.
+
+The root deliberately emits **no** canonical link. Links are concatenated rather
+than deduplicated by `rel`, so one there would render alongside each page's own
+and the pair would name two different URLs for one document.
+
+`robots.txt` and `sitemap.xml` are server routes, not files in `public/`. Both
+have to state an absolute domain, and building them from `SITE_URL` is what stops
+that domain from outliving a move. [`src/lib/sitemap.ts`](src/lib/sitemap.ts)
+holds the route list; a test compares it against the generated route tree, so a
+new public page that nobody adds fails the suite instead of going unlisted.
+
+The domain itself lives in [`src/lib/site.ts`](src/lib/site.ts) and can be
+overridden with `VITE_SITE_URL`. It is read through `import.meta.env` rather than
+`process.env` because `head()` runs in the browser too, where `process` does not
+exist.
+
+### Regenerating the icons
+
+```bash
+npm run icons:build
+```
+
+Renders `favicon.svg`, `favicon.ico`, `icon-192.png`, `icon-512.png`,
+`apple-touch-icon.png` and `og-image.png` from the vector source in
+[`scripts/icon-art.ts`](scripts/icon-art.ts). **The output is committed**, and no
+deploy runs this — which keeps a native rasteriser out of the production build.
+
+Two details worth knowing before editing the art:
+
+- **The mark is drawn twice.** At 16px the outlined card behind is a
+  two-thirds-of-a-pixel line that antialiases into grey mush, so that size gets a
+  simpler cut with no rotation and a filled back card.
+- **Only the OG card contains text**, and it is the only render that loads system
+  fonts. The icons are pure geometry on purpose: an SVG with text rasterises
+  differently on every machine, and to nothing at all where the font is absent.
 
 ## Release check
 

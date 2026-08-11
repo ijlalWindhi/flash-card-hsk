@@ -12,12 +12,26 @@ import {
 } from "@/features/flashcards/session"
 import { storeQuizDeck } from "@/features/quiz/session"
 import { getVocabularyFn } from "@/features/vocabulary/vocabulary.functions"
+import { seo, webApplicationJsonLd } from "@/lib/seo"
 import type { QuizDeck } from "@/features/quiz/session"
+
+const DESCRIPTION =
+  "Daftar lengkap 1.000 kosa kata HSK 3.0 tingkat 4 dengan arti bahasa Indonesia dan Inggris. Cari, pilih kata, lalu latih lewat flashcard atau quiz. Gratis."
 
 export const Route = createFileRoute("/")({
   component: VocabularyPage,
   loader: () => getVocabularyFn(),
   errorComponent: VocabularyUnavailable,
+  head: () => {
+    const { meta, links } = seo({
+      title: "Kosa Kata HSK 4 — 1.000 Kata Arti Indonesia",
+      description: DESCRIPTION,
+      path: "/",
+    })
+    // Structured data on the home page only: it describes the application as a
+    // whole, and repeating it per page would claim each one is a separate app.
+    return { meta: [...meta, webApplicationJsonLd(DESCRIPTION)], links }
+  },
 })
 
 function VocabularyPage() {

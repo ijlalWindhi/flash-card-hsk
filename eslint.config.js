@@ -15,6 +15,15 @@ export default [
     },
   },
   {
-    ignores: ["eslint.config.js", ".prettierrc"],
+    ignores: [
+      "eslint.config.js",
+      ".prettierrc",
+      // Build output. Nobody edits it, and once a build has been run its
+      // bundled JavaScript makes `npm run lint` report hundreds of errors
+      // about code the linter did not write and cannot fix.
+      ".output/**",
+      ".vercel/**",
+      "dist/**",
+    ],
   },
 ]
