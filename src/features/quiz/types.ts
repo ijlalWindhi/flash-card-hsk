@@ -1,6 +1,6 @@
 import type { VocabularyItem } from "@/features/vocabulary/types"
 
-export type QuizMode = "choice" | "match" | "typing" | "truefalse"
+export type QuizMode = "choice" | "match" | "typing" | "truefalse" | "draw"
 
 /** Where the deck came from. Recorded with the result, never used to grade. */
 export type QuizSource = "flashcard" | "random" | "selected" | "review"
@@ -49,8 +49,24 @@ export type TrueFalseQuestion = QuestionBase & {
   isMatch: boolean
 }
 
+/**
+ * Pinyin in; the meaning is typed and the character is drawn by hand.
+ *
+ * Carries nothing beyond the word itself, because the drawing is never graded —
+ * comparing a learner's handwriting to a printed glyph is not something this app
+ * can do fairly, so the character is revealed for the learner to judge instead.
+ */
+export type DrawQuestion = QuestionBase & {
+  kind: "draw"
+  word: VocabularyItem
+}
+
 export type QuizQuestion =
-  ChoiceQuestion | MatchQuestion | TypingQuestion | TrueFalseQuestion
+  | ChoiceQuestion
+  | MatchQuestion
+  | TypingQuestion
+  | TrueFalseQuestion
+  | DrawQuestion
 
 /** One word's outcome, accumulated as the learner plays. */
 export type WordOutcome = {
@@ -84,6 +100,7 @@ export const MODE_LABELS: Record<QuizMode, string> = {
   match: "Mencocokkan",
   typing: "Ketik jawaban",
   truefalse: "Benar atau salah",
+  draw: "Tulis hanzi",
 }
 
 export const MODE_DESCRIPTIONS: Record<QuizMode, string> = {
@@ -91,6 +108,7 @@ export const MODE_DESCRIPTIONS: Record<QuizMode, string> = {
   match: "Jodohkan hanzi dengan artinya.",
   typing: "Ketik pinyin dari hanzi yang muncul.",
   truefalse: "Tebak apakah pasangan hanzi dan arti itu cocok.",
+  draw: "Dari pinyin: tulis hanzinya dan ketik artinya.",
 }
 
 export const SOURCE_LABELS: Record<QuizSource, string> = {

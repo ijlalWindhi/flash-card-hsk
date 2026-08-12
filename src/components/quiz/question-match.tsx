@@ -148,7 +148,8 @@ export function QuestionMatch({
                 disabled={locked.includes(pairIndex)}
                 onClick={() => tap("meaning", pairIndex)}
                 aria-pressed={
-                  selected !== null && isMarked([selected], "meaning", pairIndex)
+                  selected !== null &&
+                  isMarked([selected], "meaning", pairIndex)
                 }
                 className={`flex min-h-20 w-full items-center border bg-card px-3 py-3 text-left text-sm transition-colors disabled:cursor-default ${tone("meaning", pairIndex)}`}
               >

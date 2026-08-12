@@ -14,9 +14,9 @@ export const Route = createFileRoute("/quiz")({
   component: QuizPage,
   head: () =>
     seo({
-      title: "Quiz HSK 4 — Empat Mode Latihan Kosa Kata",
+      title: "Quiz HSK 4 — Lima Mode Latihan Kosa Kata",
       description:
-        "Uji hafalan kosa kata HSK 4 lewat empat mode: pilihan ganda, benar atau salah, mengetik, dan menjodohkan. Hasil tersimpan beserta hari beruntunmu.",
+        "Uji hafalan kosa kata HSK 4 lewat lima mode: pilihan ganda, benar atau salah, mengetik, menjodohkan, dan menulis hanzi. Hasil tersimpan beserta hari beruntunmu.",
       path: "/quiz",
     }),
 })

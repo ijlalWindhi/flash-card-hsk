@@ -34,7 +34,13 @@ export function readQuizDeck(): QuizDeck | null {
   }
 }
 
-const MODES: Array<QuizMode> = ["choice", "match", "typing", "truefalse"]
+const MODES: Array<QuizMode> = [
+  "choice",
+  "match",
+  "typing",
+  "truefalse",
+  "draw",
+]
 const SOURCES: Array<QuizSource> = ["flashcard", "random", "selected", "review"]
 
 /**

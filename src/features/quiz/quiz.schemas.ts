@@ -10,7 +10,7 @@ import { z } from "zod"
  */
 export const quizResultSchema = z
   .object({
-    mode: z.enum(["choice", "match", "typing", "truefalse"]),
+    mode: z.enum(["choice", "match", "typing", "truefalse", "draw"]),
     source: z.enum(["flashcard", "random", "selected", "review"]),
     bestStreak: z.number().int().min(0).max(1000),
     dayKey: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Tanggal tidak valid."),

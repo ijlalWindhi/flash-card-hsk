@@ -22,8 +22,8 @@ function AdminLoginPage() {
       <p className="eyebrow text-mark">Admin</p>
       <h1 className="mt-2 text-2xl font-medium tracking-tight">Masuk</h1>
       <p className="mt-2 mb-8 text-sm text-muted-foreground">
-        Halaman ini hanya untuk mengelola kata tambahan. Kata resmi dari silabus tidak
-        bisa diubah dari sini.
+        Halaman ini hanya untuk mengelola kata tambahan. Kata resmi dari silabus
+        tidak bisa diubah dari sini.
       </p>
 
       <AdminLoginForm

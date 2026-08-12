@@ -40,7 +40,7 @@ export const BADGES: Array<Badge> = [
   {
     id: "all-modes",
     name: "Serba bisa",
-    description: "Mencoba keempat mode quiz.",
+    description: "Mencoba kelima mode quiz.",
   },
   {
     id: "daily-7",
@@ -75,7 +75,7 @@ export function earnedBadgeIds(context: BadgeContext): Array<string> {
   if (context.hadPerfectSession) earned.push("flawless")
   if (context.bestStreak >= 10) earned.push("streak-10")
   if (context.totalCorrect >= 100) earned.push("correct-100")
-  if (new Set(context.modesPlayed).size >= 4) earned.push("all-modes")
+  if (new Set(context.modesPlayed).size >= 5) earned.push("all-modes")
   if (context.dailyStreak >= 7) earned.push("daily-7")
 
   return earned

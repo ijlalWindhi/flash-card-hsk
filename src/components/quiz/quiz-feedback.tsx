@@ -12,24 +12,31 @@ export const CORRECT_ADVANCE_MS = 750
  * and taking it away before the learner has read it wastes the most useful
  * moment in the whole exercise.
  *
+ * `autoAdvance` is the exception to that first half. Handwriting reveals the
+ * character *after* the answer, and a correct answer that scrolls past in three
+ * quarters of a second would take the only thing worth looking at with it.
+ *
  * `role="status"` rather than `alert`: a wrong answer in a quiz is expected,
  * and alert would interrupt a screen reader mid-sentence every time.
  */
 export function QuizFeedback({
   correct,
   answer,
+  autoAdvance = true,
   onNext,
 }: {
   correct: boolean
   /** Shown only when wrong: what the answer should have been. */
   answer?: React.ReactNode
+  /** When false, even a correct answer waits for the learner to press Lanjut. */
+  autoAdvance?: boolean
   onNext: () => void
 }) {
   useEffect(() => {
-    if (!correct) return
+    if (!correct || !autoAdvance) return
     const timer = setTimeout(onNext, CORRECT_ADVANCE_MS)
     return () => clearTimeout(timer)
-  }, [correct, onNext])
+  }, [correct, autoAdvance, onNext])
 
   return (
     <div
@@ -49,7 +56,7 @@ export function QuizFeedback({
         {!correct && answer ? <p className="mt-1 text-sm">{answer}</p> : null}
       </div>
 
-      {correct ? null : (
+      {correct && autoAdvance ? null : (
         <Button size="sm" onClick={onNext} autoFocus>
           Lanjut
         </Button>

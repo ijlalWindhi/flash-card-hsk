@@ -17,7 +17,13 @@ import type { QuizDeck } from "@/features/quiz/session"
 import type { QuizMode, QuizSource } from "@/features/quiz/types"
 import type { VocabularyItem } from "@/features/vocabulary/types"
 
-const MODES: Array<QuizMode> = ["choice", "match", "typing", "truefalse"]
+const MODES: Array<QuizMode> = [
+  "choice",
+  "match",
+  "typing",
+  "truefalse",
+  "draw",
+]
 
 /** A sensible session: long enough to be worth starting, short enough to finish. */
 const DEFAULT_COUNT = 20

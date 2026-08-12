@@ -15,8 +15,8 @@ const CHOICE_ASKS: Array<ChoiceAsk> = ["meaning", "hanzi", "pinyin"]
  *
  * Multiple choice needs a second word to have something wrong to offer, and
  * true/false needs one to build a mismatched pair. Matching needs enough tiles
- * that pairing them is not automatic. Typing compares against the word itself,
- * so a single word is enough.
+ * that pairing them is not automatic. Typing and handwriting compare against the
+ * word itself, so a single word is enough.
  */
 export function minimumWordsFor(mode: QuizMode): number {
   switch (mode) {
@@ -27,6 +27,8 @@ export function minimumWordsFor(mode: QuizMode): number {
     case "match":
       return 4
     case "typing":
+      return 1
+    case "draw":
       return 1
   }
 }
@@ -190,6 +192,15 @@ function buildTyping(words: Array<VocabularyItem>): Array<QuizQuestion> {
   }))
 }
 
+function buildDraw(words: Array<VocabularyItem>): Array<QuizQuestion> {
+  return words.map((word, index) => ({
+    kind: "draw",
+    id: `draw-${index}-${word.id}`,
+    wordIds: [word.id],
+    word,
+  }))
+}
+
 /**
  * Half true pairs, half false, then shuffled.
  *
@@ -269,5 +280,7 @@ export function buildQuiz(
       return buildTyping(words)
     case "truefalse":
       return buildTrueFalse(words, pool, random)
+    case "draw":
+      return buildDraw(words)
   }
 }

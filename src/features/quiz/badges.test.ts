@@ -47,14 +47,14 @@ describe("earnedBadgeIds", () => {
     expect(earnedBadgeIds({ ...nothing, dailyStreak: 7 })).toContain("daily-7")
   })
 
-  it("needs all four modes, not four plays of one", () => {
+  it("needs all five modes, not five plays of one", () => {
     expect(
       earnedBadgeIds({ ...nothing, modesPlayed: ["choice", "choice"] })
     ).not.toContain("all-modes")
     expect(
       earnedBadgeIds({
         ...nothing,
-        modesPlayed: ["choice", "match", "typing", "truefalse"],
+        modesPlayed: ["choice", "match", "typing", "truefalse", "draw"],
       })
     ).toContain("all-modes")
   })
@@ -68,7 +68,7 @@ describe("earnedBadgeIds", () => {
         totalCorrect: 200,
         bestStreak: 12,
         dailyStreak: 8,
-        modesPlayed: ["choice", "match", "typing", "truefalse"],
+        modesPlayed: ["choice", "match", "typing", "truefalse", "draw"],
         hadPerfectSession: true,
       })
     ).toHaveLength(BADGES.length)

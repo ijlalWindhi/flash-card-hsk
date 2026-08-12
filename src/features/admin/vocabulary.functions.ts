@@ -42,10 +42,7 @@ async function takenBy(
   return rows.find((row) => row.id !== exceptId)?.kind ?? null
 }
 
-function alreadyAdded(
-  hanzi: string,
-  kind: "official" | "manual"
-): FieldError {
+function alreadyAdded(hanzi: string, kind: "official" | "manual"): FieldError {
   return {
     field: "hanzi",
     message:

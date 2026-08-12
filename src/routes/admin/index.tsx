@@ -1,4 +1,9 @@
-import { createFileRoute, redirect, useNavigate, useRouter } from "@tanstack/react-router"
+import {
+  createFileRoute,
+  redirect,
+  useNavigate,
+  useRouter,
+} from "@tanstack/react-router"
 import { useState } from "react"
 import { AdminVocabularyForm } from "@/components/admin-vocabulary-form"
 import { AdminVocabularyTable } from "@/components/admin-vocabulary-table"
@@ -50,10 +55,12 @@ function AdminPage() {
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="eyebrow text-mark">Admin</p>
-          <h1 className="mt-2 text-2xl font-medium tracking-tight">Kelola kata</h1>
+          <h1 className="mt-2 text-2xl font-medium tracking-tight">
+            Kelola kata
+          </h1>
           <p className="mt-2 max-w-prose text-sm text-muted-foreground">
-            Tambahkan kata di luar silabus. Entri resmi tetap membawa sumbernya dan tidak
-            bisa diubah di sini.
+            Tambahkan kata di luar silabus. Entri resmi tetap membawa sumbernya
+            dan tidak bisa diubah di sini.
           </p>
         </div>
         <Button
@@ -113,9 +120,13 @@ function AdminPage() {
             setEditing(item)
           }}
           onDelete={async (item) => {
-            const result = await deleteManualVocabularyFn({ data: { id: item.id } })
+            const result = await deleteManualVocabularyFn({
+              data: { id: item.id },
+            })
             setNotice(
-              result.ok ? `${item.hanzi} dihapus.` : result.errors[0]?.message ?? null,
+              result.ok
+                ? `${item.hanzi} dihapus.`
+                : (result.errors[0]?.message ?? null)
             )
             if (result.ok && editing?.id === item.id) setEditing(null)
             await refresh()
@@ -135,7 +146,9 @@ function AdminUnavailable() {
         eyebrow="Gagal memuat"
         title="Daftar kata manual tidak bisa dimuat"
         description="Aplikasi tidak dapat menghubungi basis data. Kata yang sudah tersimpan tidak terpengaruh."
-        action={<Button onClick={() => void router.invalidate()}>Coba lagi</Button>}
+        action={
+          <Button onClick={() => void router.invalidate()}>Coba lagi</Button>
+        }
       />
     </main>
   )

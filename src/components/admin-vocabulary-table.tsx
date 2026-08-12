@@ -45,7 +45,9 @@ export function AdminVocabularyTable({
           placeholder="Cari kata manual…"
           className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
         />
-        <p className="eyebrow text-muted-foreground">{results.length} kata manual</p>
+        <p className="eyebrow text-muted-foreground">
+          {results.length} kata manual
+        </p>
       </div>
 
       {results.length === 0 ? (

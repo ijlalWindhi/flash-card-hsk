@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { QuestionChoice } from "@/components/quiz/question-choice"
+import { QuestionDraw } from "@/components/quiz/question-draw"
 import { QuestionMatch } from "@/components/quiz/question-match"
 import { QuestionTrueFalse } from "@/components/quiz/question-truefalse"
 import { QuestionTyping } from "@/components/quiz/question-typing"
@@ -10,8 +11,9 @@ import { recordQuizResultFn } from "@/features/quiz/quiz.functions"
 import { dayKey } from "@/features/quiz/streak"
 import { SOURCE_LABELS } from "@/features/quiz/types"
 import type { QuizDeck } from "@/features/quiz/session"
-import type { WordOutcome } from "@/features/quiz/types"
+import type { QuizQuestion, WordOutcome } from "@/features/quiz/types"
 import type { VocabularyItem } from "@/features/vocabulary/types"
+import type { QuestionHandlers } from "@/components/quiz/question-props"
 import type { SaveState } from "@/components/quiz/quiz-result"
 
 /**
@@ -155,23 +157,46 @@ export function QuizRunner({
         ) : null}
       </div>
 
-      <div className="mt-6">
-        {question.kind === "choice" ? (
-          <QuestionChoice key={question.id} question={question} {...handlers} />
-        ) : question.kind === "match" ? (
-          <QuestionMatch key={question.id} question={question} {...handlers} />
-        ) : question.kind === "typing" ? (
-          <QuestionTyping key={question.id} question={question} {...handlers} />
-        ) : (
-          <QuestionTrueFalse
-            key={question.id}
-            question={question}
-            {...handlers}
-          />
-        )}
-      </div>
+      <div className="mt-6">{renderQuestion(question, handlers)}</div>
     </div>
   )
+}
+
+/**
+ * One arm per question kind.
+ *
+ * A switch rather than the chain of ternaries this replaced: at five modes the
+ * chain no longer read as a list, and its final `else` silently owned whatever
+ * kind was added next. Here the compiler checks the list is complete, so a sixth
+ * mode is a type error rather than a blank card at question seven.
+ */
+function renderQuestion(question: QuizQuestion, handlers: QuestionHandlers) {
+  switch (question.kind) {
+    case "choice":
+      return (
+        <QuestionChoice key={question.id} question={question} {...handlers} />
+      )
+    case "match":
+      return (
+        <QuestionMatch key={question.id} question={question} {...handlers} />
+      )
+    case "typing":
+      return (
+        <QuestionTyping key={question.id} question={question} {...handlers} />
+      )
+    case "truefalse":
+      return (
+        <QuestionTrueFalse
+          key={question.id}
+          question={question}
+          {...handlers}
+        />
+      )
+    case "draw":
+      return (
+        <QuestionDraw key={question.id} question={question} {...handlers} />
+      )
+  }
 }
 
 /** Correct answers at the end of the record — the run currently at stake. */
