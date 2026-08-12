@@ -188,6 +188,24 @@ export async function countVocabulary(db: VocabularyDatabase): Promise<number> {
   return row?.value ?? 0
 }
 
+/**
+ * Every row spelling this Hanzi, seeded or manual.
+ *
+ * Broader than the `hanzi + pinyin` unique index, which only guards manual rows
+ * against each other: an administrator retyping a word that the syllabus
+ * already carries needs to be told so before it becomes a second card for the
+ * same word. Returns the ID so an edit can tell "taken" from "this is me".
+ */
+export function findVocabularyByHanzi(
+  db: VocabularyDatabase,
+  hanzi: string
+): Promise<Array<{ id: string; kind: "official" | "manual" }>> {
+  return db
+    .select({ id: vocabulary.id, kind: vocabulary.kind })
+    .from(vocabulary)
+    .where(eq(vocabulary.hanzi, hanzi))
+}
+
 export async function getVocabularyByHanzi(
   db: VocabularyDatabase,
   hanzi: string

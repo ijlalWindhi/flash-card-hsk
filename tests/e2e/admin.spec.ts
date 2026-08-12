@@ -61,9 +61,7 @@ test("reports a duplicate word beside the field that caused it", async ({
     await page.getByRole("button", { name: "Tambah kata" }).click()
   }
 
-  await expect(
-    page.getByText("Kata dengan hanzi dan pinyin ini sudah ada.")
-  ).toBeVisible()
+  await expect(page.getByText("重复 sudah pernah ditambahkan.")).toBeVisible()
   await expect(page.getByLabel("Arti Indonesia")).toHaveValue("duplikat 2")
 })
 

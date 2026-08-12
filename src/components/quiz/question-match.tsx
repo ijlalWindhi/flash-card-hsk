@@ -9,6 +9,18 @@ const MISMATCH_MS = 600
 type Column = "hanzi" | "meaning"
 type Selection = { column: Column; pairIndex: number }
 
+/** Whether one specific card — column and all — is among the given selections. */
+function isMarked(
+  selections: Array<Selection>,
+  column: Column,
+  pairIndex: number
+): boolean {
+  return selections.some(
+    (selection) =>
+      selection.column === column && selection.pairIndex === pairIndex
+  )
+}
+
 /**
  * A board of Hanzi against shuffled meanings, cleared pair by pair.
  *
@@ -24,7 +36,7 @@ export function QuestionMatch({
   onNext,
 }: { question: MatchQuestion } & QuestionHandlers) {
   const [selected, setSelected] = useState<Selection | null>(null)
-  const [mismatch, setMismatch] = useState<Array<number>>([])
+  const [mismatch, setMismatch] = useState<Array<Selection>>([])
   const [locked, setLocked] = useState<Array<number>>([])
   const [missed, setMissed] = useState<Array<number>>([])
 
@@ -64,7 +76,7 @@ export function QuestionMatch({
     if (selected.pairIndex === pairIndex) {
       setLocked((current) => [...current, pairIndex])
     } else {
-      setMismatch([selected.pairIndex, pairIndex])
+      setMismatch([selected, { column, pairIndex }])
       setMissed((current) => [
         ...current,
         ...[selected.pairIndex, pairIndex].filter(
@@ -75,14 +87,19 @@ export function QuestionMatch({
     setSelected(null)
   }
 
-  function tone(pairIndex: number) {
+  /**
+   * Both columns are keyed by the same pair index, so any state read by index
+   * alone would light the partner card too — handing over the answer. Only a
+   * solved pair may light on both sides; a tap or a miss stays in its column.
+   */
+  function tone(column: Column, pairIndex: number) {
     if (locked.includes(pairIndex)) {
       return "border-correct text-correct opacity-55"
     }
-    if (mismatch.includes(pairIndex)) {
+    if (isMarked(mismatch, column, pairIndex)) {
       return "border-destructive text-destructive"
     }
-    if (selected?.pairIndex === pairIndex) {
+    if (selected && isMarked([selected], column, pairIndex)) {
       return "border-foreground bg-secondary"
     }
     return "border-border hover:border-foreground"
@@ -103,10 +120,21 @@ export function QuestionMatch({
                 type="button"
                 disabled={locked.includes(pairIndex)}
                 onClick={() => tap("hanzi", pairIndex)}
-                aria-pressed={selected?.pairIndex === pairIndex}
-                className={`hanzi min-h-16 w-full border bg-card px-3 py-3 text-3xl transition-colors disabled:cursor-default ${tone(pairIndex)}`}
+                aria-pressed={
+                  selected !== null && isMarked([selected], "hanzi", pairIndex)
+                }
+                className={`flex min-h-20 w-full flex-col items-center justify-center gap-1 border bg-card px-3 py-3 transition-colors disabled:cursor-default ${tone("hanzi", pairIndex)}`}
               >
-                {pair.word.hanzi}
+                <span className="hanzi text-3xl">{pair.word.hanzi}</span>
+                {/*
+                  The reading is the reward for getting the pair right, so it is
+                  absent from the DOM until then — rendering it hidden would
+                  leave the answer sitting in the markup. The slot keeps its
+                  height either way so solving a pair never shifts the board.
+                */}
+                <span className="block h-4 max-w-full truncate text-xs leading-4">
+                  {locked.includes(pairIndex) ? pair.word.pinyin : null}
+                </span>
               </button>
             </li>
           ))}
@@ -119,8 +147,10 @@ export function QuestionMatch({
                 type="button"
                 disabled={locked.includes(pairIndex)}
                 onClick={() => tap("meaning", pairIndex)}
-                aria-pressed={selected?.pairIndex === pairIndex}
-                className={`flex min-h-16 w-full items-center border bg-card px-3 py-3 text-left text-sm transition-colors disabled:cursor-default ${tone(pairIndex)}`}
+                aria-pressed={
+                  selected !== null && isMarked([selected], "meaning", pairIndex)
+                }
+                className={`flex min-h-20 w-full items-center border bg-card px-3 py-3 text-left text-sm transition-colors disabled:cursor-default ${tone("meaning", pairIndex)}`}
               >
                 {question.pairs[pairIndex].meaning}
               </button>

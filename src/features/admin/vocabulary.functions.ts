@@ -4,6 +4,7 @@ import { getDatabase } from "@/db/client.server"
 import type { VocabularyItem } from "@/features/vocabulary/types"
 import {
   deleteManualVocabulary,
+  findVocabularyByHanzi,
   insertManualVocabulary,
   listManualVocabulary,
   updateManualVocabulary,
@@ -20,6 +21,38 @@ const DUPLICATE: FieldError = {
 const UNAVAILABLE: FieldError = {
   field: "form",
   message: "Perubahan gagal disimpan. Basis data tidak merespons — coba lagi.",
+}
+
+/**
+ * Refuses a Hanzi the collection already holds, whichever list it came from.
+ *
+ * The unique index only stops one manual row duplicating another, and only when
+ * the pinyin matches too — so 好 from the syllabus could quietly be added a
+ * second time. Checking here means the editor is told which list already has
+ * it, rather than discovering the twin later in the word list.
+ *
+ * `exceptId` is the row being edited: leaving its own Hanzi untouched is not a
+ * duplicate.
+ */
+async function takenBy(
+  hanzi: string,
+  exceptId?: string
+): Promise<"official" | "manual" | null> {
+  const rows = await findVocabularyByHanzi(getDatabase(), hanzi)
+  return rows.find((row) => row.id !== exceptId)?.kind ?? null
+}
+
+function alreadyAdded(
+  hanzi: string,
+  kind: "official" | "manual"
+): FieldError {
+  return {
+    field: "hanzi",
+    message:
+      kind === "official"
+        ? `${hanzi} sudah ada di daftar resmi HSK, tidak perlu ditambahkan lagi.`
+        : `${hanzi} sudah pernah ditambahkan.`,
+  }
 }
 
 /**
@@ -77,6 +110,9 @@ export const createManualVocabularyFn = createServerFn({ method: "POST" })
     await requireAdmin()
 
     try {
+      const taken = await takenBy(data.hanzi)
+      if (taken) return failure([alreadyAdded(data.hanzi, taken)])
+
       const record = await insertManualVocabulary(getDatabase(), data)
       return { ok: true, data: toItem(record) }
     } catch (error) {
@@ -90,6 +126,9 @@ export const updateManualVocabularyFn = createServerFn({ method: "POST" })
     await requireAdmin()
 
     try {
+      const taken = await takenBy(data.hanzi, data.id)
+      if (taken) return failure([alreadyAdded(data.hanzi, taken)])
+
       const record = await updateManualVocabulary(getDatabase(), data.id, data)
       if (!record) {
         return failure([
