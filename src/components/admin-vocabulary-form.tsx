@@ -1,4 +1,4 @@
-import { useEffect, useId, useState } from "react"
+import { useEffect, useId, useRef, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -19,6 +19,15 @@ const EMPTY: ManualVocabularyInput = {
   translationId: "",
   translationEn: "",
 }
+
+/**
+ * Quiet time after the last keystroke before the Hanzi is looked up.
+ *
+ * Long enough that typing a two-character word costs one request rather than
+ * two, short enough that the verdict lands before a hand reaches the next
+ * field.
+ */
+const CHECK_DEBOUNCE_MS = 400
 
 const FIELDS = [
   { name: "hanzi", label: "Hanzi", hint: "Bentuk sederhana, contoh 例词." },
@@ -45,17 +54,65 @@ const FIELDS = [
 export function AdminVocabularyForm({
   editing,
   onSubmit,
+  onCheckHanzi,
   onCancelEdit,
 }: {
   editing: VocabularyItem | null
   onSubmit: (input: ManualVocabularyInput) => Promise<Array<FieldError> | null>
+  onCheckHanzi: (hanzi: string, excludeId?: string) => Promise<string | null>
   onCancelEdit: () => void
 }) {
   const [values, setValues] = useState<ManualVocabularyInput>(EMPTY)
   const [errors, setErrors] = useState<Array<FieldError>>([])
+  const [duplicate, setDuplicate] = useState<string | null>(null)
   const [pending, setPending] = useState(false)
   const hydrated = useHydrated()
   const formId = useId()
+
+  // Read through a ref so a caller that rebuilds the callback every render
+  // cannot restart the debounce and keep the request permanently deferred.
+  const checkRef = useRef(onCheckHanzi)
+  useEffect(() => {
+    checkRef.current = onCheckHanzi
+  })
+
+  const hanzi = values.hanzi.trim()
+  const editingId = editing?.id
+
+  /**
+   * Looks the Hanzi up once typing settles, rather than at submit time.
+   *
+   * Re-running on every change cancels the previous timer and disowns any
+   * request still in flight, so a slow answer about an older Hanzi can never
+   * overwrite a newer verdict. Clearing on entry means the warning disappears
+   * the moment the word is edited, instead of lingering over a Hanzi it no
+   * longer describes.
+   */
+  useEffect(() => {
+    setDuplicate(null)
+    setErrors((current) =>
+      current.some((error) => error.field === "hanzi")
+        ? current.filter((error) => error.field !== "hanzi")
+        : current
+    )
+    if (hanzi.length === 0) return
+
+    let live = true
+    const timer = setTimeout(async () => {
+      try {
+        const message = await checkRef.current(hanzi, editingId)
+        if (live) setDuplicate(message)
+      } catch {
+        // The submit handler checks again and is the authority; a failed
+        // preview is not worth an error message of its own.
+      }
+    }, CHECK_DEBOUNCE_MS)
+
+    return () => {
+      live = false
+      clearTimeout(timer)
+    }
+  }, [hanzi, editingId])
 
   useEffect(() => {
     setValues(
@@ -111,7 +168,11 @@ export function AdminVocabularyForm({
         <div className="grid gap-4 sm:grid-cols-2">
           {FIELDS.map((field) => {
             const inputId = `${formId}-${field.name}`
-            const message = errorFor(field.name)
+            // The live verdict only ever concerns the Hanzi, and only until a
+            // submit produces something more specific about that same field.
+            const message =
+              errorFor(field.name) ??
+              (field.name === "hanzi" ? (duplicate ?? undefined) : undefined)
             const hintId = `${inputId}-hint`
 
             return (

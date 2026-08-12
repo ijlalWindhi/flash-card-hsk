@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/empty-state"
 import { getAdminSessionFn, logoutFn } from "@/features/admin/auth.functions"
 import {
+  checkManualVocabularyHanziFn,
   createManualVocabularyFn,
   deleteManualVocabularyFn,
   listManualVocabularyFn,
@@ -74,6 +75,12 @@ function AdminPage() {
           <AdminVocabularyForm
             editing={editing}
             onCancelEdit={() => setEditing(null)}
+            onCheckHanzi={async (hanzi, excludeId) => {
+              const result = await checkManualVocabularyHanziFn({
+                data: { hanzi, excludeId },
+              })
+              return result.message
+            }}
             onSubmit={async (input): Promise<Array<FieldError> | null> => {
               const result = editing
                 ? await updateManualVocabularyFn({

@@ -104,6 +104,33 @@ export const listManualVocabularyFn = createServerFn({ method: "GET" }).handler(
   }
 )
 
+/**
+ * Answers "is this Hanzi already taken?" while the editor is still typing.
+ *
+ * POST rather than GET so no cache can hand back a verdict about a word that
+ * has since been added. A failed lookup reports "free": this is a courtesy
+ * ahead of the real gate in `createManualVocabularyFn`, and a database hiccup
+ * should not put a duplicate warning on a word that may well be fine.
+ */
+export const checkManualVocabularyHanziFn = createServerFn({ method: "POST" })
+  .validator(
+    z.object({
+      hanzi: z.string().trim().min(1).max(40),
+      excludeId: z.string().min(1).optional(),
+    })
+  )
+  .handler(async ({ data }): Promise<{ message: string | null }> => {
+    await requireAdmin()
+
+    try {
+      const taken = await takenBy(data.hanzi, data.excludeId)
+      return { message: taken ? alreadyAdded(data.hanzi, taken).message : null }
+    } catch (error) {
+      console.error("hanzi availability check failed", error)
+      return { message: null }
+    }
+  })
+
 export const createManualVocabularyFn = createServerFn({ method: "POST" })
   .validator(manualVocabularySchema)
   .handler(async ({ data }): Promise<MutationResult<VocabularyItem>> => {
