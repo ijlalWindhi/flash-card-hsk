@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto"
-import { and, asc, count, eq } from "drizzle-orm"
+import { and, asc, count, eq, or } from "drizzle-orm"
 import { getDatabase } from "@/db/client.server"
 import type { VocabularyDatabase } from "@/db/client.server"
 import type { NewVocabularyRecord, VocabularyRecord } from "@/db/schema"
@@ -7,6 +7,8 @@ import { vocabulary } from "@/db/schema"
 import type { VocabularyCsvRow } from "../../../scripts/validate-hsk4-dataset"
 import type { ManualVocabularyInput as ManualVocabularySchemaInput } from "@/features/admin/vocabulary.schemas"
 import { normalizePinyin } from "./normalize"
+import { SYLLABUSES } from "./syllabus"
+import type { Syllabus, SyllabusId } from "./syllabus"
 import type { VocabularyItem } from "./types"
 
 export type ManualVocabularyInput = {
@@ -101,12 +103,19 @@ export async function insertManualVocabulary(
 }
 
 /**
- * Every word, sorted the way the list renders it: by tone-free pinyin, with
- * Hanzi as a stable tie-breaker so two readings of one spelling keep a fixed
- * order. Selects only the client-safe columns.
+ * One syllabus' words, sorted the way the list renders them: by tone-free
+ * pinyin, with Hanzi as a stable tie-breaker so two readings of one spelling
+ * keep a fixed order. Selects only the client-safe columns.
+ *
+ * Official rows are filtered by `source_version`, which is what tells the two
+ * seeded word lists apart. Manual rows carry no `source_version` — they are the
+ * administrator's own additions, not part of any syllabus — so they appear
+ * under both, which is the only way they never vanish on a learner who
+ * switches.
  */
 export function selectVocabulary(
-  db: VocabularyDatabase
+  db: VocabularyDatabase,
+  syllabus: Syllabus
 ): Promise<Array<VocabularyItem>> {
   return db
     .select({
@@ -119,12 +128,20 @@ export function selectVocabulary(
       kind: vocabulary.kind,
     })
     .from(vocabulary)
+    .where(
+      or(
+        eq(vocabulary.kind, "manual"),
+        eq(vocabulary.sourceVersion, syllabus.sourceVersion)
+      )
+    )
     .orderBy(asc(vocabulary.pinyinSortKey), asc(vocabulary.hanzi))
 }
 
 /** The handler behind `getVocabularyFn`; resolves the database itself. */
-export function getVocabulary(): Promise<Array<VocabularyItem>> {
-  return selectVocabulary(getDatabase())
+export function getVocabulary(
+  syllabusId: SyllabusId
+): Promise<Array<VocabularyItem>> {
+  return selectVocabulary(getDatabase(), SYLLABUSES[syllabusId])
 }
 
 /** The administrator's own entries — the only rows they may edit or remove. */

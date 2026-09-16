@@ -1,37 +1,58 @@
 /**
- * Imports `data/hsk4-3.0.csv` into the configured Turso/libSQL database.
+ * Imports both Level 4 seed files into the configured Turso/libSQL database.
  *
  * Run with `npm run db:seed`, after `npm run db:migrate`. Safe to re-run: rows
  * already present are skipped, so administrator edits and manual entries are
  * never overwritten.
+ *
+ * The two syllabuses share 132 words. Those are seeded twice on purpose — once
+ * per syllabus, under different `external_id`s — because each word list is
+ * browsed on its own and a row has to belong to exactly one of them. The
+ * `(hanzi, pinyin)` unique index is scoped to manual rows, so the overlap is
+ * not a constraint violation. See data/README.md.
  */
 import { createClient } from "@libsql/client"
 import { config } from "dotenv"
 import { drizzle } from "drizzle-orm/libsql"
 import { seedOfficialVocabulary } from "../src/features/vocabulary/vocabulary.server"
-import {
-  DATASET_PATH,
-  loadDataset,
-  validateDataset,
-} from "./validate-hsk4-dataset"
+import { DATASETS, loadDataset, validateDataset } from "./validate-hsk4-dataset"
+import type { VocabularyCsvRow } from "./validate-hsk4-dataset"
 
 config()
 
-async function main() {
-  const rows = loadDataset()
-  const validation = validateDataset(rows)
+/** Every seed row, refusing the whole import if any file is malformed. */
+function loadAllDatasets(): Array<VocabularyCsvRow> {
+  const problems: Array<string> = []
+  const rows: Array<VocabularyCsvRow> = []
 
-  const problems = [
-    ...validation.invalidRows.map(
-      ({ line, reason }) => `${DATASET_PATH}:${line} ${reason}`
-    ),
-    ...validation.duplicatePairs.map((pair) => `duplicate entry: ${pair}`),
-  ]
+  for (const dataset of DATASETS) {
+    const fileRows = loadDataset(dataset.file)
+    const validation = validateDataset(fileRows, dataset.sourceVersion)
+
+    problems.push(
+      ...validation.invalidRows.map(
+        ({ line, reason }) => `${dataset.file}:${line} ${reason}`
+      ),
+      ...validation.duplicatePairs.map((pair) => `duplicate entry: ${pair}`)
+    )
+    if (fileRows.length !== dataset.expectedRows) {
+      problems.push(
+        `${dataset.file}: ${fileRows.length} rows, expected ${dataset.expectedRows}`
+      )
+    }
+    rows.push(...fileRows)
+  }
+
   if (problems.length > 0) {
     throw new Error(
       `refusing to seed invalid data:\n  ${problems.join("\n  ")}`
     )
   }
+  return rows
+}
+
+async function main() {
+  const rows = loadAllDatasets()
 
   const url = process.env.TURSO_DATABASE_URL
   if (!url) {

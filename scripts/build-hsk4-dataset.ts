@@ -1,9 +1,13 @@
 /**
- * Rebuilds `data/hsk4-3.0.csv` from its three upstream sources.
+ * Rebuilds the Level 4 seed CSVs from their upstream sources.
  *
- * Run with `npm run data:build`. Sources are cached under `.cache/hsk-sources/`
- * (gitignored) so repeated runs do not re-download ~20 MB. Pass `--refresh` to
- * force a fresh download.
+ *   npm run data:build                    -> data/hsk4-3.0.csv (1000 words)
+ *   npm run data:build -- --standard=2.0  -> data/hsk4-2.0.csv (600 words)
+ *
+ * Both standards share the same two dictionaries, so a card reads the same way
+ * whichever syllabus it came from; only the word list differs. Sources are
+ * cached under `.cache/hsk-sources/` (gitignored) so repeated runs do not
+ * re-download ~20 MB. Pass `--refresh` to force a fresh download.
  *
  * Provenance for every field is documented in docs/dataset-provenance.md.
  */
@@ -16,14 +20,6 @@ import { parse } from "csv-parse/sync"
 
 const ROOT = path.resolve(import.meta.dirname, "..")
 const CACHE = path.join(ROOT, ".cache", "hsk-sources")
-const OUT = path.join(ROOT, "data", "hsk4-3.0.csv")
-
-/** The syllabus that decides which words are Level 4. */
-const SOURCE_NAME = "CLEC 新版HSK考试大纲"
-const SOURCE_URL =
-  "https://hsk.cn-bj.ufileos.com/3.0/%E6%96%B0%E7%89%88HSK%E8%80%83%E8%AF%95%E5%A4%A7%E7%BA%B21219.pdf"
-const SOURCE_VERSION = "2025-11"
-const VERIFIED_AT = "2026-08-11"
 
 /** Keeps a flashcard readable when a dictionary entry has many senses. */
 const MAX_SENSES = 3
@@ -33,6 +29,10 @@ const SOURCES = {
   hsk30: {
     url: "https://raw.githubusercontent.com/ivankra/hsk30/master/hsk30.csv",
     file: "hsk30.csv",
+  },
+  hsk20: {
+    url: "https://raw.githubusercontent.com/glxxyz/hskhsk.com/master/data/lists/HSK%20Official%20With%20Definitions%202012%20L4.txt",
+    file: "hsk20-l4.txt",
   },
   cedict: {
     url: "https://www.mdbg.net/chinese/export/cedict/cedict_1_0_ts_utf-8_mdbg.txt.gz",
@@ -44,11 +44,14 @@ const SOURCES = {
   },
 } as const
 
+type Gloss = { en: string; id: string }
+
 /**
- * The only two Level 4 words with no CC-CEDICT or CC-CIDICT entry. Hand-authored
- * here so the gap stays visible in review rather than buried in the CSV.
+ * The only two HSK 3.0 Level 4 words with no CC-CEDICT or CC-CIDICT entry.
+ * Hand-authored here so the gap stays visible in review rather than buried in
+ * the CSV.
  */
-const MANUAL_GLOSSES: Record<string, { en: string; id: string }> = {
+const MANUAL_GLOSSES_30: Record<string, Gloss> = {
   眼里: {
     en: "in one's eyes;in one's view",
     id: "di mata seseorang;menurut pandangan",
@@ -60,15 +63,66 @@ const MANUAL_GLOSSES: Record<string, { en: string; id: string }> = {
 }
 
 /**
- * 批 is listed twice in the syllabus — once as a verb, once as a classifier —
- * with the same pinyin, and both dictionaries fold every sense into a single
- * entry. Selecting sense indices keeps the two cards distinguishable.
+ * The 2012 syllabus lists one verb phrase that neither dictionary carries as a
+ * single entry: it is 弹 + 钢琴, which both dictionaries gloss separately.
+ */
+const MANUAL_GLOSSES_20: Record<string, Gloss> = {
+  弹钢琴: {
+    en: "to play the piano",
+    id: "bermain piano;memainkan piano",
+  },
+}
+
+/**
+ * 批 is listed twice in the HSK 3.0 syllabus — once as a verb, once as a
+ * classifier — with the same pinyin, and both dictionaries fold every sense
+ * into a single entry. Selecting sense indices keeps the two cards
+ * distinguishable.
  *
  * CC-CIDICT is a sense-for-sense translation of CC-CEDICT, so one index list
  * addresses the same meaning in both languages.
  */
 const SENSE_OVERRIDES: Record<string, Array<number>> = {
   "hsk3-4-0556": [4, 5],
+}
+
+type StandardKey = "3.0" | "2.0"
+
+type Standard = {
+  out: string
+  membership: (typeof SOURCES)["hsk30"] | (typeof SOURCES)["hsk20"]
+  sourceName: string
+  sourceUrl: string
+  sourceVersion: string
+  verifiedAt: string
+  expectedRows: number
+  manualGlosses: Record<string, Gloss>
+}
+
+const STANDARDS: Record<StandardKey, Standard> = {
+  "3.0": {
+    out: "hsk4-3.0.csv",
+    membership: SOURCES.hsk30,
+    sourceName: "CLEC 新版HSK考试大纲",
+    sourceUrl:
+      "https://hsk.cn-bj.ufileos.com/3.0/%E6%96%B0%E7%89%88HSK%E8%80%83%E8%AF%95%E5%A4%A7%E7%BA%B21219.pdf",
+    sourceVersion: "2025-11",
+    verifiedAt: "2026-09-16",
+    expectedRows: 1000,
+    manualGlosses: MANUAL_GLOSSES_30,
+  },
+  "2.0": {
+    out: "hsk4-2.0.csv",
+    membership: SOURCES.hsk20,
+    // CLEC no longer hosts the 2012 syllabus PDF, so the fetchable authority
+    // for membership is the transcription — see docs/dataset-provenance.md.
+    sourceName: "Hanban 新汉语水平考试大纲 HSK四级 (2012)",
+    sourceUrl: SOURCES.hsk20.url,
+    sourceVersion: "2012",
+    verifiedAt: "2026-09-16",
+    expectedRows: 600,
+    manualGlosses: MANUAL_GLOSSES_20,
+  },
 }
 
 async function download(
@@ -103,16 +157,25 @@ const DICT_LINE = /^(\S+)\s(\S+)\s\[([^\]]*)\]\s\/(.*)\/\s*$/
 
 type DictEntry = { numeric: string; senses: Array<string> }
 
+type DictIndex = {
+  /** Keyed by simplified Hanzi + lowercased numeric pinyin. */
+  byKey: Map<string, Array<DictEntry>>
+  /** Keyed by simplified Hanzi alone, for resolving an unknown reading. */
+  bySimplified: Map<string, Array<DictEntry>>
+}
+
 /**
- * Indexes a dictionary by simplified Hanzi plus lowercased numeric pinyin.
+ * Indexes a dictionary by simplified Hanzi plus lowercased numeric pinyin, and
+ * by Hanzi alone.
  *
  * The traditional form is not part of the key: the syllabus transcription and
  * CC-CEDICT disagree on some variants (小伙子 vs 小夥子). Case is folded because
  * entries that double as proper nouns are capitalised (延長 vs 延长), but the
  * original case is kept per entry so an exact match can win at lookup time.
  */
-function indexDictionary(text: string): Map<string, Array<DictEntry>> {
-  const index = new Map<string, Array<DictEntry>>()
+function indexDictionary(text: string): DictIndex {
+  const byKey = new Map<string, Array<DictEntry>>()
+  const bySimplified = new Map<string, Array<DictEntry>>()
   for (const line of text.split("\n")) {
     if (!line || line.startsWith("#")) continue
     const match = DICT_LINE.exec(line)
@@ -120,41 +183,67 @@ function indexDictionary(text: string): Map<string, Array<DictEntry>> {
     const [, , simplified, numeric, body] = match
     const entry: DictEntry = { numeric, senses: splitSenses(body) }
     if (entry.senses.length === 0) continue
-    const key = dictKey(simplified, numeric)
-    const bucket = index.get(key)
-    if (bucket) bucket.push(entry)
-    else index.set(key, [entry])
+    push(byKey, dictKey(simplified, numeric), entry)
+    push(bySimplified, simplified, entry)
   }
-  return index
+  return { byKey, bySimplified }
+}
+
+function push<T>(map: Map<string, Array<T>>, key: string, value: T): void {
+  const bucket = map.get(key)
+  if (bucket) bucket.push(value)
+  else map.set(key, [value])
 }
 
 function dictKey(simplified: string, numeric: string): string {
   return `${simplified} ${numeric.toLowerCase()}`
 }
 
+/**
+ * A classifier list is not a meaning. CC-CEDICT tags it `CL:`; CC-CIDICT
+ * translates the tag to `KP:`, `KH:` or `SM:`. Those four are the only
+ * all-caps tags in either corpus, and no real gloss opens with one.
+ *
+ * Case-sensitive on purpose — under /i this would also eat "to:" and "ke:".
+ */
+const CLASSIFIER_TAG = /^[A-Z]{2,3}:/
+
+/**
+ * The same tag also rides along inside a sense — "cutlass (CL:把)", or after a
+ * comma once the upstream semicolon has been rewritten — where dropping the
+ * whole sense would throw the meaning away with it.
+ */
+const INLINE_CLASSIFIER_TAG = /\s*[(,;]\s*[A-Z]{2,3}:[^)]*\)?/g
+
+/**
+ * Cross-references and pronunciation notes point at another headword instead
+ * of translating this one. Both dictionaries qualify the variant marker —
+ * "old variant of", "erhua variant of", "varian lama dari" — so the qualifier
+ * has to be allowed for, not just the bare phrase.
+ */
+const NOT_A_GLOSS =
+  /^\(?(?:see\b|lihat\b|varian\b|(?:also|Taiwan|Beijing) pr\.|(?:juga|Taiwan|Beijing) dibaca\b|(?:[a-z]+ ){0,3}variant of\b)/i
+
 /** Splits one CC-CEDICT body into clean, learner-facing senses. */
 function splitSenses(body: string): Array<string> {
   return (
     body
       .split("/")
+      // Dropped before the trad|simp stripper runs, not after: that stripper
+      // rewrites `CL:個|个[ge4]` to a bare `个`, destroying the very tag that
+      // identifies the sense as a classifier list.
+      .filter((sense) => !CLASSIFIER_TAG.test(sense.trimStart()))
       .map((sense) =>
         sense
           // 個|个[ge4] -> 个, and the bracket-less 兩個|两个 -> 两个
           .replace(/[^\s|[\]]+\|([^\s|[\]]+)(\[[^\]]*\])?/g, "$1")
           // leftover bare pinyin brackets
           .replace(/\[[^\]]*\]/g, "")
+          .replace(INLINE_CLASSIFIER_TAG, "")
           .replace(/\s+/g, " ")
           .trim()
       )
-      .filter(
-        (sense) =>
-          sense.length > 0 &&
-          !sense.startsWith("CL:") &&
-          // cross-references and pronunciation notes are not study glosses
-          !/^(see|lihat|Taiwan pr\.|also pr\.|variant of|varian dari)\b/i.test(
-            sense
-          )
-      )
+      .filter((sense) => sense.length > 0 && !NOT_A_GLOSS.test(sense))
       // `;` is our sense delimiter, so it must not survive inside a sense.
       .map((sense) => sense.replace(/;/g, ","))
   )
@@ -172,6 +261,20 @@ function lookupSenses(
   const candidates = index.get(dictKey(simplified, numeric)) ?? []
   const exact = candidates.find((entry) => entry.numeric === numeric)
   return (exact ?? candidates[0])?.senses ?? []
+}
+
+/**
+ * Takes senses from each reading in turn, so a word the syllabus lists under
+ * two readings (空 kōng / kòng) does not spend its whole card on the first one.
+ */
+function interleave(lists: Array<Array<string>>): Array<string> {
+  if (lists.length === 1) return lists[0]
+  const merged: Array<string> = []
+  const longest = Math.max(0, ...lists.map((list) => list.length))
+  for (let i = 0; i < longest; i++) {
+    for (const list of lists) if (list[i]) merged.push(list[i])
+  }
+  return merged
 }
 
 /** Joins senses into one CSV cell, bounded by sense count and character length. */
@@ -210,6 +313,74 @@ function toCsvField(value: string): string {
   return /[",\n]/.test(value) ? `"${value.replace(/"/g, '""')}"` : value
 }
 
+/** Tone-marked vowels, indexed by tone 1–4; tone 5 (neutral) carries no mark. */
+const TONE_MARKS: Record<string, string> = {
+  a: "āáǎà",
+  e: "ēéěè",
+  i: "īíǐì",
+  o: "ōóǒò",
+  u: "ūúǔù",
+  ü: "ǖǘǚǜ",
+}
+
+/**
+ * `ai4 qing2` -> `àiqíng`.
+ *
+ * Converting in this direction is deterministic; the reverse is not, which is
+ * why the 2012 list is matched to CC-CEDICT by rendering the dictionary's own
+ * numeric pinyin rather than by parsing the list's (tone marks are unambiguous,
+ * syllable boundaries in an unspaced romanisation are not).
+ */
+function toneMark(syllable: string): string {
+  const match = /^([a-z:]+)([1-5])$/i.exec(syllable)
+  if (!match) return syllable.toLowerCase().replace(/u:/g, "ü")
+
+  const base = match[1].toLowerCase().replace(/u:/g, "ü")
+  const tone = Number(match[2])
+  if (tone === 5) return base
+
+  // Mandarin rule: a, o and e always take the mark; otherwise the last vowel
+  // does (jiù, huì, lǜ).
+  const priority = ["a", "o", "e"].find((vowel) => base.includes(vowel))
+  const at = priority
+    ? base.indexOf(priority)
+    : Math.max(
+        base.lastIndexOf("i"),
+        base.lastIndexOf("u"),
+        base.lastIndexOf("ü")
+      )
+  if (at < 0) return base
+  return base.slice(0, at) + TONE_MARKS[base[at]][tone - 1] + base.slice(at + 1)
+}
+
+function toneMarked(numeric: string): string {
+  return numeric.split(/\s+/).map(toneMark).join("")
+}
+
+/** Folds away spacing and punctuation so two transcriptions can be compared. */
+function normalizePinyin(value: string): string {
+  return value.toLowerCase().replace(/[\s'’·\-.]/g, "")
+}
+
+/** Also folds away tone marks, for lists that write sandhi or a neutral tone. */
+function stripTones(value: string): string {
+  return normalizePinyin(value)
+    .normalize("NFD")
+    .replace(/\p{Mark}/gu, "")
+}
+
+type Membership = {
+  externalId: string
+  hanzi: string
+  pinyin: string
+  /**
+   * The `(simplified, numeric pinyin)` pairs to look the word up under. More
+   * than one when the syllabus lists a word under two readings.
+   */
+  keys: Array<{ simplified: string; numeric: string }>
+  senseOverrides?: Array<number>
+}
+
 type HskRow = {
   ID: string
   Simplified: string
@@ -218,80 +389,171 @@ type HskRow = {
   CEDICT: string
 }
 
-async function main() {
-  const refresh = process.argv.includes("--refresh")
-
-  const [hskRaw, cedictRaw, cidictRaw] = await Promise.all([
-    download(SOURCES.hsk30.url, SOURCES.hsk30.file, refresh),
-    download(SOURCES.cedict.url, SOURCES.cedict.file, refresh),
-    download(SOURCES.cidict.url, SOURCES.cidict.file, refresh),
-  ])
-
-  const hskRows = parse(hskRaw.toString("utf8"), {
+/** HSK 3.0: the syllabus transcription already carries a CC-CEDICT key. */
+function readHsk30(raw: Buffer): Array<Membership> {
+  const rows = parse(raw.toString("utf8"), {
     columns: true,
     skip_empty_lines: true,
   }) as Array<HskRow>
 
-  const level4 = hskRows.filter((row) => row.Level === "4")
-  if (level4.length !== 1000) {
+  return rows
+    .filter((row) => row.Level === "4")
+    .map((row) => {
+      const externalId = row.ID.replace(/^L(\d+)-/, "hsk3-$1-")
+      // A cell can hold several traditional spellings of one word; they share a
+      // definition, so the first reference is enough.
+      const reference = parseReference(
+        row.CEDICT.split("/").filter(Boolean)[0] ?? ""
+      )
+      return {
+        externalId,
+        hanzi: row.Simplified,
+        pinyin: row.Pinyin,
+        keys: reference ? [reference] : [],
+        senseOverrides: SENSE_OVERRIDES[externalId],
+      }
+    })
+}
+
+/**
+ * HSK 2.0: the 2012 list is `simplified \t traditional \t numeric \t marked \t
+ * definition`. Its numeric column drops neutral tones and has transcription
+ * errors (参观 is written `cang1uan1`), so only the tone-marked column is
+ * trusted, and the dictionary key is recovered by rendering each CC-CEDICT
+ * reading of the same Hanzi and keeping the one that matches.
+ */
+function readHsk20(raw: Buffer, english: DictIndex): Array<Membership> {
+  const lines = raw
+    .toString("utf8")
+    .replace(/^\uFEFF/, "")
+    .split(/\r?\n/)
+    .filter((line) => line.trim().length > 0)
+
+  return lines.map((line, index) => {
+    const [hanzi, , , marked] = line.split("\t")
+    const pinyin = marked.trim()
+    const candidates = english.bySimplified.get(hanzi) ?? []
+
+    // `dǎo, dào` — the syllabus lists one word under two readings.
+    const keys = pinyin
+      .split(",")
+      .map((reading) => matchReading(candidates, reading.trim()))
+      .filter((numeric): numeric is string => numeric !== null)
+      .map((numeric) => ({ simplified: hanzi, numeric }))
+
+    return {
+      externalId: `hsk2-4-${String(index + 1).padStart(4, "0")}`,
+      hanzi,
+      pinyin,
+      keys,
+    }
+  })
+}
+
+/**
+ * CC-CEDICT capitalises the reading of a proper noun, so 干 carries both
+ * `Gan1` ("surname Gan") and `gan1` ("dry"). The syllabus means the common
+ * word, so a lower-case reading wins whenever one spells the same sound.
+ */
+function preferCommonNoun(entries: Array<DictEntry>): DictEntry | undefined {
+  return (
+    entries.find((entry) => entry.numeric === entry.numeric.toLowerCase()) ??
+    entries[0]
+  )
+}
+
+/** Finds the CC-CEDICT reading of a Hanzi that the syllabus is transcribing. */
+function matchReading(
+  candidates: Array<DictEntry>,
+  reading: string
+): string | null {
+  const exact = candidates.filter(
+    (entry) =>
+      normalizePinyin(toneMarked(entry.numeric)) === normalizePinyin(reading)
+  )
+  // The 2012 list writes tone sandhi (búguò) and neutral-tone variants (fùqin)
+  // that CC-CEDICT spells with the citation tone, so fall back to the syllables.
+  const relaxed = candidates.filter(
+    (entry) => stripTones(toneMarked(entry.numeric)) === stripTones(reading)
+  )
+  return (preferCommonNoun(exact) ?? preferCommonNoun(relaxed))?.numeric ?? null
+}
+
+async function main() {
+  const refresh = process.argv.includes("--refresh")
+  const flag = process.argv
+    .find((arg) => arg.startsWith("--standard="))
+    ?.slice("--standard=".length)
+  if (flag && !(flag in STANDARDS)) {
     throw new Error(
-      `expected 1000 Level 4 rows in hsk30.csv, found ${level4.length}`
+      `unknown --standard=${flag}; expected one of ${Object.keys(STANDARDS).join(", ")}`
     )
   }
+  const standard = STANDARDS[(flag as StandardKey | undefined) ?? "3.0"]
+  const out = path.join(ROOT, "data", standard.out)
+
+  const [membershipRaw, cedictRaw, cidictRaw] = await Promise.all([
+    download(standard.membership.url, standard.membership.file, refresh),
+    download(SOURCES.cedict.url, SOURCES.cedict.file, refresh),
+    download(SOURCES.cidict.url, SOURCES.cidict.file, refresh),
+  ])
 
   const english = indexDictionary(gunzipSync(cedictRaw).toString("utf8"))
   const indonesian = indexDictionary(cidictRaw.toString("utf8"))
+
+  const words =
+    standard.membership === SOURCES.hsk30
+      ? readHsk30(membershipRaw)
+      : readHsk20(membershipRaw, english)
+
+  if (words.length !== standard.expectedRows) {
+    throw new Error(
+      `expected ${standard.expectedRows} Level 4 rows in ${standard.membership.file}, found ${words.length}`
+    )
+  }
 
   const lines = [
     "external_id,hanzi,pinyin,translation_id,translation_en,source_name,source_url,source_version,verified_at",
   ]
   const unresolved: Array<string> = []
 
-  for (const row of level4) {
-    const externalId = row.ID.replace(/^L(\d+)-/, "hsk3-$1-")
-    const manual = MANUAL_GLOSSES[row.Simplified]
-    // A cell can hold several traditional spellings of one word; they share a
-    // definition, so the first reference is enough.
-    const reference = parseReference(
-      row.CEDICT.split("/").filter(Boolean)[0] ?? ""
-    )
-    const overrides = SENSE_OVERRIDES[externalId]
+  for (const word of words) {
+    const manual = standard.manualGlosses[word.hanzi]
+    const gloss = (index: DictIndex) =>
+      formatSenses(
+        interleave(
+          word.keys.map(({ simplified, numeric }) =>
+            lookupSenses(index.byKey, simplified, numeric)
+          )
+        ),
+        word.senseOverrides
+      )
 
     const translationEn =
-      manual?.en ??
-      formatSenses(
-        reference
-          ? lookupSenses(english, reference.simplified, reference.numeric)
-          : [],
-        overrides
-      )
+      manual?.en ?? (word.keys.length > 0 ? gloss(english) : "")
     const translationId =
-      manual?.id ??
-      formatSenses(
-        reference
-          ? lookupSenses(indonesian, reference.simplified, reference.numeric)
-          : [],
-        overrides
-      )
+      manual?.id ?? (word.keys.length > 0 ? gloss(indonesian) : "")
 
     if (!translationEn || !translationId) {
       unresolved.push(
-        `${row.ID} ${row.Simplified} (${row.CEDICT || "no dictionary key"})`
+        `${word.externalId} ${word.hanzi} ${word.pinyin} (${
+          word.keys.map((key) => key.numeric).join(" / ") || "no dictionary key"
+        })`
       )
       continue
     }
 
     lines.push(
       [
-        externalId,
-        row.Simplified,
-        row.Pinyin,
+        word.externalId,
+        word.hanzi,
+        word.pinyin,
         translationId,
         translationEn,
-        SOURCE_NAME,
-        SOURCE_URL,
-        SOURCE_VERSION,
-        VERIFIED_AT,
+        standard.sourceName,
+        standard.sourceUrl,
+        standard.sourceVersion,
+        standard.verifiedAt,
       ]
         .map(toCsvField)
         .join(",")
@@ -308,11 +570,11 @@ async function main() {
   }
 
   const csv = `${lines.join("\n")}\n`
-  await writeFile(OUT, csv, "utf8")
+  await writeFile(out, csv, "utf8")
 
   const digest = createHash("sha256").update(csv).digest("hex").slice(0, 16)
   process.stdout.write(
-    `wrote ${path.relative(ROOT, OUT)} — ${lines.length - 1} rows, sha256:${digest}\n`
+    `wrote ${path.relative(ROOT, out)} — ${lines.length - 1} rows, sha256:${digest}\n`
   )
 }
 

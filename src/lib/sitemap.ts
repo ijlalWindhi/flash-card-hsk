@@ -21,6 +21,13 @@ export const SITEMAP_ROUTES: Array<SitemapEntry> = [
   { path: "/", priority: 1.0, changefreq: "weekly" },
   { path: "/study", priority: 0.9, changefreq: "monthly" },
   { path: "/quiz", priority: 0.9, changefreq: "monthly" },
+  // The HSK 2.0 word list is a real alternative, not a duplicate of the 3.0
+  // one — different syllabus, different 600 words — so it is listed rather
+  // than pointed at `/` with a canonical. It ranks just under the default
+  // because that is the list the site leads with.
+  { path: "/hsk2", priority: 0.9, changefreq: "weekly" },
+  { path: "/hsk2/study", priority: 0.8, changefreq: "monthly" },
+  { path: "/hsk2/quiz", priority: 0.8, changefreq: "monthly" },
   { path: "/about", priority: 0.5, changefreq: "yearly" },
   { path: "/masuk", priority: 0.3, changefreq: "yearly" },
   { path: "/daftar", priority: 0.3, changefreq: "yearly" },

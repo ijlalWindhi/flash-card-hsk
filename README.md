@@ -1,13 +1,22 @@
 # Han.note — kosa kata HSK 4
 
-A flashcard app for the 1,000 words **introduced at** HSK 3.0 level 4, with Indonesian
-and English meanings. Hanzi first: a card shows only the character until you flip it.
+A flashcard app for the words **introduced at** HSK level 4, with Indonesian and English
+meanings. Hanzi first: a card shows only the character until you flip it.
+
+Two syllabuses, picked from the header and distinguished by URL so a refresh or a shared
+link keeps the choice:
+
+| Syllabus                          | Words | List    | Flashcards     | Quiz          |
+| --------------------------------- | ----- | ------- | -------------- | ------------- |
+| HSK 3.0 (latest published)        | 1,000 | `/`     | `/study`       | `/quiz`       |
+| HSK 2.0 (2012, still administered) | 600   | `/hsk2` | `/hsk2/study`  | `/hsk2/quiz`  |
 
 The interface is in Indonesian. This README is in English because it is for whoever
 deploys and maintains the app.
 
-- **Data**: `data/hsk4-3.0.csv`, joined from three licensed sources. See
-  [`ATTRIBUTION.md`](ATTRIBUTION.md) and [`docs/dataset-provenance.md`](docs/dataset-provenance.md).
+- **Data**: `data/hsk4-3.0.csv` and `data/hsk4-2.0.csv`, each joined from licensed
+  sources. See [`ATTRIBUTION.md`](ATTRIBUTION.md) and
+  [`docs/dataset-provenance.md`](docs/dataset-provenance.md).
 - **Stack**: TanStack Start (React 19, Vite), Nitro for the deployable server build,
   Tailwind + shadcn/ui, Drizzle ORM on Turso/libSQL, Zod, Vitest, Playwright.
 
@@ -68,10 +77,11 @@ node -e "console.log(crypto.randomBytes(32).toString('base64url'))"
 | `npm run test:e2e`      | Browser tests (Playwright). Builds its own throwaway database. |
 | `npm run typecheck`     | `tsc --noEmit`.                                                |
 | `npm run data:build`    | Rebuilds `data/hsk4-3.0.csv` from its upstream sources.        |
-| `npm run data:validate` | Gate on row count, provenance and duplicates.                  |
+| ` ` ↳ `-- --standard=2.0` | Rebuilds `data/hsk4-2.0.csv` instead.                        |
+| `npm run data:validate` | Gates both CSVs on row count, provenance and duplicates.       |
 | `npm run db:generate`   | Generate a Drizzle migration from `src/db/schema.ts`.          |
 | `npm run db:migrate`    | Apply migrations.                                              |
-| `npm run db:seed`       | Import the CSV. Idempotent — safe to re-run.                   |
+| `npm run db:seed`       | Import both CSVs. Idempotent — safe to re-run.                 |
 | `npm run icons:build`   | Re-render the favicon, app icons and OG card into `public/`.   |
 
 ## Deploying to Vercel
@@ -223,6 +233,7 @@ Editorial decisions that are not a mechanical join of the sources are listed in
 
 ## Licence
 
-The application code and the dataset are licensed separately. `data/hsk4-3.0.csv`
-derives from CC-CEDICT and CC-CIDICT and is therefore **CC BY-SA 4.0**; redistributing it
-means keeping the attribution in [`ATTRIBUTION.md`](ATTRIBUTION.md) and the same licence.
+The application code and the datasets are licensed separately. `data/hsk4-3.0.csv` and
+`data/hsk4-2.0.csv` derive from CC-CEDICT and CC-CIDICT and are therefore
+**CC BY-SA 4.0**; redistributing either means keeping the attribution in
+[`ATTRIBUTION.md`](ATTRIBUTION.md) and the same licence.

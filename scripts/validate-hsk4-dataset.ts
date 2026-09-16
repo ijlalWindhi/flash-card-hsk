@@ -1,5 +1,5 @@
 /**
- * Data-quality gate for `data/hsk4-3.0.csv`.
+ * Data-quality gate for the Level 4 seed CSVs.
  *
  * Run with `npm run data:validate`. Also imported by `tests/dataset.test.ts` and
  * by the seed script, so a malformed row can never reach the database.
@@ -10,9 +10,28 @@ import { fileURLToPath } from "node:url"
 import { parse } from "csv-parse/sync"
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
+
+/** The deck the application seeds from. */
 export const DATASET_PATH = path.join(ROOT, "data", "hsk4-3.0.csv")
+/** The HSK 2.0 Level 4 deck — built and validated, not yet seeded. */
+export const DATASET_PATH_HSK2 = path.join(ROOT, "data", "hsk4-2.0.csv")
 
 export const EXPECTED_SOURCE_VERSION = "2025-11"
+export const EXPECTED_SOURCE_VERSION_HSK2 = "2012"
+
+/** Every dataset this gate knows about, with the row count each must hold. */
+export const DATASETS = [
+  {
+    file: DATASET_PATH,
+    sourceVersion: EXPECTED_SOURCE_VERSION,
+    expectedRows: 1000,
+  },
+  {
+    file: DATASET_PATH_HSK2,
+    sourceVersion: EXPECTED_SOURCE_VERSION_HSK2,
+    expectedRows: 600,
+  },
+] as const
 
 export const CSV_COLUMNS = [
   "external_id",
@@ -71,7 +90,8 @@ function describeRow(row: VocabularyCsvRow): string {
 }
 
 export function validateDataset(
-  rows: Array<VocabularyCsvRow>
+  rows: Array<VocabularyCsvRow>,
+  expectedSourceVersion: string = EXPECTED_SOURCE_VERSION
 ): DatasetValidationResult {
   const invalidRows: Array<{ line: number; reason: string }> = []
   const duplicatePairs: Array<string> = []
@@ -96,9 +116,9 @@ export function validateDataset(
     if (row.source_url && !row.source_url.startsWith("https://")) {
       fail(`source_url is not HTTPS: ${row.source_url}`)
     }
-    if (row.source_version !== EXPECTED_SOURCE_VERSION) {
+    if (row.source_version !== expectedSourceVersion) {
       fail(
-        `source_version is ${row.source_version}, expected ${EXPECTED_SOURCE_VERSION}`
+        `source_version is ${row.source_version}, expected ${expectedSourceVersion}`
       )
     }
     if (row.verified_at && !/^\d{4}-\d{2}-\d{2}$/.test(row.verified_at)) {
@@ -127,27 +147,46 @@ export function validateDataset(
 }
 
 function main() {
-  const rows = loadDataset()
-  const result = validateDataset(rows)
+  let problems = 0
 
-  for (const { line, reason } of result.invalidRows) {
-    process.stderr.write(`${DATASET_PATH}:${line} ${reason}\n`)
-  }
-  for (const pair of result.duplicatePairs) {
-    process.stderr.write(`duplicate entry: ${pair}\n`)
+  for (const dataset of DATASETS) {
+    const result = validateDataset(
+      loadDataset(dataset.file),
+      dataset.sourceVersion
+    )
+    const name = path.basename(dataset.file)
+
+    for (const { line, reason } of result.invalidRows) {
+      process.stderr.write(`${dataset.file}:${line} ${reason}\n`)
+    }
+    for (const pair of result.duplicatePairs) {
+      process.stderr.write(`${name}: duplicate entry: ${pair}\n`)
+    }
+    if (result.rowCount !== dataset.expectedRows) {
+      process.stderr.write(
+        `${name}: ${result.rowCount} rows, expected ${dataset.expectedRows}\n`
+      )
+    }
+
+    problems +=
+      result.invalidRows.length +
+      result.duplicatePairs.length +
+      (result.rowCount === dataset.expectedRows ? 0 : 1)
+
+    const homographs =
+      result.homographPairs.length > 0
+        ? `, ${result.homographPairs.length} homograph(s): ${result.homographPairs.join(", ")}`
+        : ""
+    process.stdout.write(
+      `${name}: ${result.rowCount} sourced rows, ${result.invalidRows.length} invalid, ` +
+        `${result.duplicatePairs.length} duplicate${homographs}\n`
+    )
   }
 
-  const problems = result.invalidRows.length + result.duplicatePairs.length
   if (problems > 0) {
     process.stderr.write(`\n${problems} problem(s) found\n`)
     process.exitCode = 1
-    return
   }
-
-  process.stdout.write(
-    `${result.rowCount} sourced rows, 0 invalid, 0 duplicate` +
-      `${result.homographPairs.length > 0 ? `, ${result.homographPairs.length} homograph(s): ${result.homographPairs.join(", ")}` : ""}\n`
-  )
 }
 
 // Only run the CLI when invoked directly, not when imported by tests.

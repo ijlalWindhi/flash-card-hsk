@@ -22,6 +22,7 @@ import {
   issueAdminToken,
 } from "../src/features/admin/auth.server"
 import { manualVocabularySchema } from "../src/features/admin/vocabulary.schemas"
+import { SYLLABUSES } from "../src/features/vocabulary/syllabus"
 import type { VocabularyCsvRow } from "../scripts/validate-hsk4-dataset"
 
 const officialRow: VocabularyCsvRow = {
@@ -128,6 +129,34 @@ describe("vocabulary persistence", () => {
 })
 
 describe("selectVocabulary", () => {
+  const hsk3 = SYLLABUSES["3.0"]
+  const hsk2 = SYLLABUSES["2.0"]
+
+  /** One row as each syllabus seeds it, plus one the administrator typed. */
+  async function seedBothSyllabuses() {
+    await seedOfficialVocabulary(db, [
+      {
+        ...officialRow,
+        external_id: "hsk3-4-0001",
+        hanzi: "会议",
+        pinyin: "huìyì",
+      },
+      {
+        ...officialRow,
+        external_id: "hsk2-4-0001",
+        hanzi: "爱情",
+        pinyin: "àiqíng",
+        source_version: hsk2.sourceVersion,
+      },
+    ])
+    await insertManualVocabulary(db, {
+      hanzi: "例词",
+      pinyin: "lìcí",
+      translationId: "kata contoh",
+      translationEn: "example word",
+    })
+  }
+
   it("sorts by tone-free pinyin, then Hanzi, and hides server-only columns", async () => {
     await seedOfficialVocabulary(db, [
       { ...officialRow, external_id: "x-3", hanzi: "会议", pinyin: "huìyì" },
@@ -135,7 +164,7 @@ describe("selectVocabulary", () => {
       { ...officialRow, external_id: "x-2", hanzi: "俺", pinyin: "ǎn" },
     ])
 
-    const items = await selectVocabulary(db)
+    const items = await selectVocabulary(db, hsk3)
 
     expect(items.map((entry) => entry.hanzi)).toEqual(["俺", "安排", "会议"])
     expect(Object.keys(items[0]).sort()).toEqual([
@@ -147,6 +176,28 @@ describe("selectVocabulary", () => {
       "translationEn",
       "translationId",
     ])
+  })
+
+  it("returns only the official rows of the syllabus asked for", async () => {
+    await seedBothSyllabuses()
+
+    const inHsk3 = await selectVocabulary(db, hsk3)
+    const inHsk2 = await selectVocabulary(db, hsk2)
+
+    expect(inHsk3.map((entry) => entry.hanzi)).not.toContain("爱情")
+    expect(inHsk3.map((entry) => entry.hanzi)).toContain("会议")
+    expect(inHsk2.map((entry) => entry.hanzi)).not.toContain("会议")
+    expect(inHsk2.map((entry) => entry.hanzi)).toContain("爱情")
+  })
+
+  it("shows the administrator's own words under both syllabuses", async () => {
+    await seedBothSyllabuses()
+
+    for (const syllabus of [hsk3, hsk2]) {
+      const items = await selectVocabulary(db, syllabus)
+      expect(items.filter((entry) => entry.kind === "manual")).toHaveLength(1)
+      expect(items.map((entry) => entry.hanzi)).toContain("例词")
+    }
   })
 })
 

@@ -4,6 +4,7 @@ yarn.lock
 
 # Generated from upstream sources; formatting is the build script's business.
 data/hsk4-3.0.csv
+data/hsk4-2.0.csv
 
 # Authored under the superpowers workflow; keep them byte-identical to the plan.
 docs/superpowers/

@@ -8,6 +8,7 @@ import { TanStackRouterDevtoolsPanel } from "@tanstack/react-router-devtools"
 import { TanStackDevtools } from "@tanstack/react-devtools"
 
 import { AccountNav } from "@/components/account-nav"
+import { SyllabusSwitcher } from "@/components/syllabus-switcher"
 import { getCurrentUserFn } from "@/features/accounts/auth.functions"
 import { pageTitle } from "@/lib/seo"
 import { SITE_LOCALE, SITE_NAME, absoluteUrl, OG_IMAGE_PATH } from "@/lib/site"
@@ -43,7 +44,7 @@ export const Route = createRootRoute({
       {
         name: "description",
         content:
-          "Hafalkan 1.000 kata yang diperkenalkan di HSK 3.0 tingkat 4, dengan arti Indonesia dan Inggris.",
+          "Hafalkan kata yang diperkenalkan di HSK tingkat 4 — silabus 3.0 maupun 2.0 — dengan arti Indonesia dan Inggris.",
       },
       { name: "theme-color", content: "#faf9f7" },
       { property: "og:site_name", content: SITE_NAME },
@@ -93,7 +94,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
               Han<span className="text-mark">.</span>note
             </Link>
             <nav className="flex items-center gap-5 text-xs text-muted-foreground">
-              <span className="hidden sm:inline">HSK 3.0 · tingkat 4</span>
+              <SyllabusSwitcher />
               <Link to="/about" className="underline-offset-4 hover:underline">
                 Tentang
               </Link>
@@ -106,8 +107,8 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 
         <footer className="border-t border-border">
           <div className="mx-auto w-full max-w-5xl px-5 py-5 text-xs leading-relaxed text-muted-foreground">
-            Daftar kata dari silabus HSK 3.0 terbitan terbaru. Arti dari
-            CC-CEDICT dan CC-CIDICT, CC BY-SA 4.0.{" "}
+            Daftar kata dari silabus HSK 3.0 (terbitan terbaru) dan HSK 2.0
+            (2012). Arti dari CC-CEDICT dan CC-CIDICT, CC BY-SA 4.0.{" "}
             <Link to="/about" className="underline underline-offset-4">
               Sumber dan atribusi
             </Link>

@@ -1,3 +1,4 @@
+import type { SyllabusId } from "@/features/vocabulary/syllabus"
 import type { VocabularyItem } from "@/features/vocabulary/types"
 
 export type StudySession = {
@@ -10,16 +11,25 @@ export type StudySession = {
  *
  * Session storage, not the URL or the database: a deck is per-tab and
  * disposable, and a thousand IDs do not belong in a query string.
+ *
+ * Keyed per syllabus so `/hsk2/study` can never render a deck that was built
+ * from the 3.0 list. Without that, switching syllabus mid-session would show
+ * one syllabus' words under the other's URL.
  */
-export const STUDY_SESSION_KEY = "hsk4-study-session"
+export function studySessionKey(syllabus: SyllabusId): string {
+  return `hsk4-study-session:${syllabus}`
+}
 
-export function storeStudySession(session: StudySession): void {
-  sessionStorage.setItem(STUDY_SESSION_KEY, JSON.stringify(session))
+export function storeStudySession(
+  syllabus: SyllabusId,
+  session: StudySession
+): void {
+  sessionStorage.setItem(studySessionKey(syllabus), JSON.stringify(session))
 }
 
 /** Returns null for a missing, malformed or empty payload — never throws. */
-export function readStudySession(): StudySession | null {
-  const raw = sessionStorage.getItem(STUDY_SESSION_KEY)
+export function readStudySession(syllabus: SyllabusId): StudySession | null {
+  const raw = sessionStorage.getItem(studySessionKey(syllabus))
   if (!raw) return null
 
   try {

@@ -1,8 +1,8 @@
 # Attribution
 
-`data/hsk4-3.0.csv` is a derivative work of the sources below and is redistributed under
-the **Creative Commons Attribution-ShareAlike 4.0 International licence (CC BY-SA 4.0)**,
-<https://creativecommons.org/licenses/by-sa/4.0/>.
+`data/hsk4-3.0.csv` and `data/hsk4-2.0.csv` are derivative works of the sources below and
+are redistributed under the **Creative Commons Attribution-ShareAlike 4.0 International
+licence (CC BY-SA 4.0)**, <https://creativecommons.org/licenses/by-sa/4.0/>.
 
 Full field-by-field provenance is in [`docs/dataset-provenance.md`](docs/dataset-provenance.md).
 
@@ -18,6 +18,35 @@ The machine-readable transcription used here is [`ivankra/hsk30`](https://github
 whose parsing code is MIT licensed:
 
 > Copyright (c) ivankra
+>
+> Permission is hereby granted, free of charge, to any person obtaining a copy of this
+> software and associated documentation files (the "Software"), to deal in the Software
+> without restriction, including without limitation the rights to use, copy, modify,
+> merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+> permit persons to whom the Software is furnished to do so, subject to the following
+> conditions:
+>
+> The above copyright notice and this permission notice shall be included in all copies
+> or substantial portions of the Software.
+>
+> THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+> INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A
+> PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+> HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF
+> CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
+> THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+## Word list — Hanban 新汉语水平考试大纲 HSK四级 (2012)
+
+The membership of HSK 2.0 Level 4 is defined by the _New HSK Test Syllabus_ published by
+Hanban / Confucius Institute Headquarters in 2012. CLEC no longer hosts that PDF, so the
+fetchable authority is the machine-readable transcription published at
+<https://hskhsk.com> and kept in [`glxxyz/hskhsk.com`](https://github.com/glxxyz/hskhsk.com),
+which is MIT licensed:
+
+> MIT License
+>
+> Copyright (c) 2020 Alan Davies
 >
 > Permission is hereby granted, free of charge, to any person obtaining a copy of this
 > software and associated documentation files (the "Software"), to deal in the Software
@@ -86,5 +115,5 @@ The notice distributed with CC-CIDICT reads:
 ## Share-alike
 
 Because CC-CEDICT and CC-CIDICT are licensed CC BY-SA 4.0, any redistribution of
-`data/hsk4-3.0.csv` — modified or not — must keep this attribution and remain under
-CC BY-SA 4.0.
+`data/hsk4-3.0.csv` or `data/hsk4-2.0.csv` — modified or not — must keep this attribution
+and remain under CC BY-SA 4.0.

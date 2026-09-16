@@ -1,3 +1,4 @@
+import type { SyllabusId } from "@/features/vocabulary/syllabus"
 import type { VocabularyItem } from "@/features/vocabulary/types"
 import type { QuizMode, QuizSource } from "./types"
 
@@ -10,20 +11,22 @@ export type QuizDeck = {
 /**
  * Where a pending quiz lives between the start dialog and the quiz page.
  *
- * The same reasoning as the flashcard deck: per-tab, disposable, and far too
- * many ids to put in a query string. Questions are *not* stored — they are
- * rebuilt from the words on arrival, so a refresh reshuffles rather than
- * replaying the identical quiz.
+ * The same reasoning as the flashcard deck: per-tab, disposable, keyed per
+ * syllabus, and far too many ids to put in a query string. Questions are *not*
+ * stored — they are rebuilt from the words on arrival, so a refresh reshuffles
+ * rather than replaying the identical quiz.
  */
-export const QUIZ_SESSION_KEY = "hsk4-quiz-session"
+export function quizSessionKey(syllabus: SyllabusId): string {
+  return `hsk4-quiz-session:${syllabus}`
+}
 
-export function storeQuizDeck(deck: QuizDeck): void {
-  sessionStorage.setItem(QUIZ_SESSION_KEY, JSON.stringify(deck))
+export function storeQuizDeck(syllabus: SyllabusId, deck: QuizDeck): void {
+  sessionStorage.setItem(quizSessionKey(syllabus), JSON.stringify(deck))
 }
 
 /** Returns null for a missing, malformed or empty payload — never throws. */
-export function readQuizDeck(): QuizDeck | null {
-  const raw = sessionStorage.getItem(QUIZ_SESSION_KEY)
+export function readQuizDeck(syllabus: SyllabusId): QuizDeck | null {
+  const raw = sessionStorage.getItem(quizSessionKey(syllabus))
   if (!raw) return null
 
   try {

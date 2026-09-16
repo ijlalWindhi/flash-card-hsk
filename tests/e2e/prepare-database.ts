@@ -2,7 +2,7 @@ import { rm } from "node:fs/promises"
 import { createClient } from "@libsql/client"
 import { drizzle } from "drizzle-orm/libsql"
 import { migrate } from "drizzle-orm/libsql/migrator"
-import { loadDataset } from "../../scripts/validate-hsk4-dataset"
+import { DATASETS, loadDataset } from "../../scripts/validate-hsk4-dataset"
 import { seedOfficialVocabulary } from "../../src/features/vocabulary/vocabulary.server"
 import { E2E_DATABASE_URL, E2E_DB_FILE } from "./env"
 
@@ -20,7 +20,12 @@ async function main() {
 
   const db = drizzle(createClient({ url: E2E_DATABASE_URL }))
   await migrate(db, { migrationsFolder: "./drizzle" })
-  const report = await seedOfficialVocabulary(db, loadDataset())
+  // Both syllabuses, so the `/hsk2` pages are exercised against real rows
+  // rather than an empty list that would pass for a broken filter.
+  const report = await seedOfficialVocabulary(
+    db,
+    DATASETS.flatMap((dataset) => loadDataset(dataset.file))
+  )
 
   process.stdout.write(`e2e database ready: ${JSON.stringify(report)}\n`)
 }
