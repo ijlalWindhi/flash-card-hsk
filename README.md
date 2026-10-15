@@ -78,10 +78,11 @@ node -e "console.log(crypto.randomBytes(32).toString('base64url'))"
 | `npm run typecheck`     | `tsc --noEmit`.                                                |
 | `npm run data:build`    | Rebuilds `data/hsk4-3.0.csv` from its upstream sources.        |
 | ` ` ↳ `-- --standard=2.0` | Rebuilds `data/hsk4-2.0.csv` instead.                        |
-| `npm run data:validate` | Gates both CSVs on row count, provenance and duplicates.       |
+| ` ` ↳ `-- --standard=2.0 --level=5` | Rebuilds `data/hsk5-2.0.csv`.                      |
+| `npm run data:validate` | Gates every CSV on row count, provenance and duplicates.       |
 | `npm run db:generate`   | Generate a Drizzle migration from `src/db/schema.ts`.          |
 | `npm run db:migrate`    | Apply migrations.                                              |
-| `npm run db:seed`       | Import both CSVs. Idempotent — safe to re-run.                 |
+| `npm run db:seed`       | Import every CSV. Idempotent — safe to re-run.                 |
 | `npm run icons:build`   | Re-render the favicon, app icons and OG card into `public/`.   |
 
 ## Deploying to Vercel
@@ -233,7 +234,7 @@ Editorial decisions that are not a mechanical join of the sources are listed in
 
 ## Licence
 
-The application code and the datasets are licensed separately. `data/hsk4-3.0.csv` and
-`data/hsk4-2.0.csv` derive from CC-CEDICT and CC-CIDICT and are therefore
+The application code and the datasets are licensed separately. `data/hsk4-3.0.csv`,
+`data/hsk4-2.0.csv` and `data/hsk5-2.0.csv` derive from CC-CEDICT and CC-CIDICT and are therefore
 **CC BY-SA 4.0**; redistributing either means keeping the attribution in
 [`ATTRIBUTION.md`](ATTRIBUTION.md) and the same licence.

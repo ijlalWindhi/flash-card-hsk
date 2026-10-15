@@ -7,7 +7,7 @@ export const Route = createFileRoute("/about")({
     seo({
       title: "Sumber Data dan Atribusi",
       description:
-        "Dari mana kedua daftar kata HSK 4 di Han.note berasal — silabus 3.0 dan 2.0 — lisensi tiap sumbernya, dan bagaimana arti bahasa Indonesia serta Inggris disusun.",
+        "Dari mana daftar kata HSK di Han.note berasal — tingkat 4 silabus 3.0 dan 2.0, serta tingkat 5 silabus 2.0 — lisensi tiap sumbernya, dan bagaimana arti bahasa Indonesia serta Inggris disusun.",
       path: "/about",
     }),
 })
@@ -17,6 +17,13 @@ const SYLLABUS_30_URL =
 
 const SYLLABUS_20_URL =
   "https://raw.githubusercontent.com/glxxyz/hskhsk.com/master/data/lists/HSK%20Official%20With%20Definitions%202012%20L4.txt"
+
+const SYLLABUS_20_L5_URL =
+  "https://raw.githubusercontent.com/glxxyz/hskhsk.com/master/data/lists/HSK%20Official%20With%20Definitions%202012%20L5.txt"
+
+/** Hanban's own 2012 word list, gone from chinesetest.cn but archived. */
+const HANBAN_2012_XLS_URL =
+  "https://web.archive.org/web/20210423042835/http://www.chinesetest.cn/userfiles/file/HSK/HSK-2012.xls"
 
 function Section({
   title,
@@ -84,6 +91,11 @@ function AboutPage() {
             daftar yang sama: hanya 132 kata yang muncul di kedua-duanya.
           </p>
           <p>
+            Untuk HSK 2.0 tersedia juga daftar{" "}
+            <strong className="text-foreground">tingkat 5</strong>, yang bisa
+            dipilih lewat tombol 4 / 5 setelah memilih 2.0.
+          </p>
+          <p>
             <strong className="text-foreground">HSK 3.0</strong> adalah silabus{" "}
             <em>terbitan terbaru</em>, bukan pernyataan bahwa semua pusat ujian
             sudah memakainya. CLEC menyebut ujian HSK 3.0 masih dalam tahap uji
@@ -129,6 +141,23 @@ function AboutPage() {
           </p>
         </Section>
 
+        <Section title="Daftar kata HSK 2.0 tingkat 5 — 1.300 kata">
+          <p>
+            Keanggotaannya ditentukan oleh 新汉语水平考试大纲 HSK五级 terbitan
+            Hanban edisi 2012: 1.300 kata yang <em>diperkenalkan</em> di tingkat
+            5, di atas 1.200 kata HSK 1–4 — sehingga totalnya 2.500 kata.
+          </p>
+          <p>
+            Transkripsinya diambil dari{" "}
+            <Ext href={SYLLABUS_20_L5_URL}>hskhsk.com</Ext> (MIT), lalu
+            dicocokkan kata per kata dengan{" "}
+            <Ext href={HANBAN_2012_XLS_URL}>
+              berkas daftar kata resmi Hanban
+            </Ext>{" "}
+            yang tersimpan di Internet Archive: ke-1.300 katanya sama persis.
+          </p>
+        </Section>
+
         <Section title="Arti Inggris">
           <p>
             Dari{" "}
@@ -149,9 +178,9 @@ function AboutPage() {
             mesin.
           </p>
           <p>
-            Tiga kata tidak punya entri di kedua kamus (眼里 dan 有劲儿 di
-            daftar 3.0, 弹钢琴 di daftar 2.0); artinya ditulis manual dan
-            ditandai di repositori.
+            Empat kata tidak punya entri di kedua kamus (眼里 dan 有劲儿 di
+            daftar 3.0, 弹钢琴 di daftar 2.0 tingkat 4, 系领带 di daftar 2.0
+            tingkat 5); artinya ditulis manual dan ditandai di repositori.
           </p>
         </Section>
 
@@ -161,7 +190,7 @@ function AboutPage() {
             <Ext href="https://creativecommons.org/licenses/by-sa/4.0/">
               CC BY-SA 4.0
             </Ext>
-            . Kedua berkas data aplikasi ini adalah karya turunan keduanya,
+            . Semua berkas data aplikasi ini adalah karya turunan keduanya,
             sehingga ikut dibagikan di bawah CC BY-SA 4.0 — siapa pun yang
             menyebarkannya ulang wajib mempertahankan atribusi ini dan lisensi
             yang sama.
@@ -180,7 +209,7 @@ function AboutPage() {
             itu ditandai sebagai entri manual dan tidak membawa metadata sumber
             apa pun — hanya entri resmi yang mencantumkan silabus, versi, dan
             tanggal verifikasinya. Karena tidak terikat silabus manapun, kata
-            tambahan muncul di daftar 3.0 maupun 2.0.
+            tambahan muncul di semua daftar.
           </p>
         </Section>
       </div>

@@ -1,5 +1,5 @@
 /**
- * Data-quality gate for the Level 4 seed CSVs.
+ * Data-quality gate for the seed CSVs.
  *
  * Run with `npm run data:validate`. Also imported by `tests/dataset.test.ts` and
  * by the seed script, so a malformed row can never reach the database.
@@ -16,20 +16,34 @@ export const DATASET_PATH = path.join(ROOT, "data", "hsk4-3.0.csv")
 /** The HSK 2.0 Level 4 deck — built and validated, not yet seeded. */
 export const DATASET_PATH_HSK2 = path.join(ROOT, "data", "hsk4-2.0.csv")
 
+/** The HSK 2.0 Level 5 deck. */
+export const DATASET_PATH_HSK2_L5 = path.join(ROOT, "data", "hsk5-2.0.csv")
+
 export const EXPECTED_SOURCE_VERSION = "2025-11"
 export const EXPECTED_SOURCE_VERSION_HSK2 = "2012"
 
-/** Every dataset this gate knows about, with the row count each must hold. */
+/**
+ * Every dataset this gate knows about — and so every one `npm run db:seed`
+ * imports — with the level and row count each must hold.
+ */
 export const DATASETS = [
   {
     file: DATASET_PATH,
     sourceVersion: EXPECTED_SOURCE_VERSION,
+    level: 4,
     expectedRows: 1000,
   },
   {
     file: DATASET_PATH_HSK2,
     sourceVersion: EXPECTED_SOURCE_VERSION_HSK2,
+    level: 4,
     expectedRows: 600,
+  },
+  {
+    file: DATASET_PATH_HSK2_L5,
+    sourceVersion: EXPECTED_SOURCE_VERSION_HSK2,
+    level: 5,
+    expectedRows: 1300,
   },
 ] as const
 
@@ -42,6 +56,7 @@ export const CSV_COLUMNS = [
   "source_name",
   "source_url",
   "source_version",
+  "hsk_level",
   "verified_at",
 ] as const
 
@@ -91,7 +106,8 @@ function describeRow(row: VocabularyCsvRow): string {
 
 export function validateDataset(
   rows: Array<VocabularyCsvRow>,
-  expectedSourceVersion: string = EXPECTED_SOURCE_VERSION
+  expectedSourceVersion: string = EXPECTED_SOURCE_VERSION,
+  expectedLevel: number = 4
 ): DatasetValidationResult {
   const invalidRows: Array<{ line: number; reason: string }> = []
   const duplicatePairs: Array<string> = []
@@ -120,6 +136,10 @@ export function validateDataset(
       fail(
         `source_version is ${row.source_version}, expected ${expectedSourceVersion}`
       )
+    }
+    // Two decks share `source_version` 2012; the level is what keeps them apart.
+    if (row.hsk_level !== String(expectedLevel)) {
+      fail(`hsk_level is ${row.hsk_level}, expected ${expectedLevel}`)
     }
     if (row.verified_at && !/^\d{4}-\d{2}-\d{2}$/.test(row.verified_at)) {
       fail(`verified_at is not an ISO date: ${row.verified_at}`)
@@ -152,7 +172,8 @@ function main() {
   for (const dataset of DATASETS) {
     const result = validateDataset(
       loadDataset(dataset.file),
-      dataset.sourceVersion
+      dataset.sourceVersion,
+      dataset.level
     )
     const name = path.basename(dataset.file)
 

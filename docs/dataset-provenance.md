@@ -1,7 +1,7 @@
 # Dataset Provenance
 
-This document records where every field in `data/hsk4-3.0.csv` and `data/hsk4-2.0.csv`
-comes from, under what licence it may be redistributed, and how to reproduce the files.
+This document records where every field in `data/hsk4-3.0.csv`, `data/hsk4-2.0.csv` and
+`data/hsk5-2.0.csv` comes from, under what licence it may be redistributed, and how to reproduce the files.
 
 ## Status disclosure: which HSK are we talking about?
 
@@ -14,7 +14,9 @@ they introduce at Level 4 overlap only partly.
   labels this deck "HSK 3.0 (latest published syllabus)" everywhere it is shown so
   learners are not misled into thinking HSK 2.0 has been retired at their test centre.
 - **`hsk4-2.0.csv` — HSK 2.0, Level 4: the syllabus most test centres still administer.**
-  Built and validated, but not yet seeded into the database or surfaced in the UI.
+  Served at `/hsk2`.
+- **`hsk5-2.0.csv` — HSK 2.0, Level 5.** Seeded beside the others and told apart from the
+  Level 4 deck by `hsk_level`, but not yet surfaced in the UI.
 
 ## Membership: which words are Level 4?
 
@@ -60,6 +62,10 @@ We verified it before use. Its per-level counts are 150 / 152 / 302 / **600** / 
 2500 — the official 2012 totals are 150 / 150 / 300 / 600 / 1300 / 2500, and the four
 extra rows at levels 2 and 3 are headwords the list splits by reading. Level 4 is exact.
 
+Since then the transcription has also been checked against Hanban's own file (see
+_HSK 2.0 — 1,300 words_ below): its Level 4 holds the same 600 headwords, the official
+file differing only in tagging two of them with a part of speech (`得（助动词）`, `等（助词）`).
+
 A second candidate, [`drkameleon/complete-hsk-vocabulary`](https://github.com/drkameleon/complete-hsk-vocabulary),
 was rejected: its "old" Level 4 holds 598 words and diverges from the official list by 90
 in each direction, with 55 words the 2012 syllabus places at Level 4 moved to Level 5 and
@@ -76,6 +82,45 @@ the list writes tone sandhi (`búguò` for `bùguò`) or a neutral-tone variant 
 `fùqīn`), the match falls back to comparing syllables with the tones stripped. 594 of the
 600 rows match on the strict comparison; 5 need the fallback; 1 has no dictionary entry
 at all and is hand-glossed.
+
+### HSK 2.0 Level 5 — 1,300 words
+
+**Authority:** `新汉语水平考试大纲 HSK五级`, Hanban, 2012 edition. Level 5 introduces
+1,300 words on top of the 1,200 of HSK 1–4, for the 2,500 the exam is described as
+requiring. `hsk5-2.0.csv` is seeded but has no page yet — see
+[`../data/README.md`](../data/README.md).
+
+**Official file, archived.** Hanban published the 2012 revision as a spreadsheet at
+`http://www.chinesetest.cn/userfiles/file/HSK/HSK-2012.xls`. The live URL is gone, but the
+Internet Archive holds it from 2013 to 2021:
+<https://web.archive.org/web/20210423042835id_/http://www.chinesetest.cn/userfiles/file/HSK/HSK-2012.xls>.
+Its sheet `新HSK5000词` tags each of the 5,000 headwords with exactly one level
+(150 / 150 / 300 / 600 / **1300** / 2500); the cumulative sheets `新HSK（四级）（1200）` and
+`新HSK（五级）（2500）` agree with those tags.
+
+**Machine-readable transcription:** `glxxyz/hskhsk.com`, file
+`data/lists/HSK Official With Definitions 2012 L5.txt` — the same source and format as the
+Level 4 deck, read by the same code path. The spreadsheet carries Hanzi only, so the
+transcription is what supplies tone-marked pinyin.
+
+We verified it before use (2026-10-15):
+
+- `glxxyz` keeps a copy of the spreadsheet as `data/lists/HSK-2012.xls`; it is
+  byte-identical to the archived official file (SHA-256 `164ab0b7…a802d`).
+- The transcription's 1,300 Level 5 headwords equal the spreadsheet's `（五级）` tags —
+  same words, same order — and equal `五级` minus `四级` from the cumulative sheets.
+- None of them repeats a Level 4 headword.
+
+Two other lists were rejected. [`clem109/hsk-vocabulary`](https://github.com/clem109/hsk-vocabulary)
+and `drkameleon/complete-hsk-vocabulary` ("old" Level 5) each differ from the official
+2012 Level 5 by 174 words in each direction. They follow the **2010** list (`glxxyz`
+`New_HSK_2010.csv`) that the 2012 revision replaced: of the 2010 Level 5 words missing
+from 2012 Level 5, 141 moved to another level and 40 were dropped or reworded
+(一路平安 → 平安, 健身房 → 健身, 小偷 → 偷).
+
+1,295 rows resolve to a dictionary entry through their own reading, 10 of them under two
+readings (`数 shù, shǔ`). The five that do not are listed under _Known editorial
+decisions_ in `data/README.md`.
 
 ## English meanings
 
@@ -112,7 +157,13 @@ only, so three kinds of sense are dropped:
 - **Cross-references** — `variant of`, `old variant of`, `erhua variant of`,
   `varian dari`, `varian lama dari` and their siblings, plus `see` / `lihat`. They point
   at another headword instead of translating this one.
-- **Pronunciation notes** — `also pr.`, `Taiwan pr.`, `juga dibaca`, `Taiwan dibaca`.
+- **Pronunciation notes** — `also pr.`, `Taiwan pr.`, `colloquial pr.`, `juga dibaca`,
+  `Taiwan dibaca`, `bahasa sehari-hari dibaca`.
+
+The same notes also trail a real meaning in parentheses — `classifier for horses (Taiwan
+pr. [pi1])`, `inscribed bamboo stick (variant of 籤|签[qian1])` — and there only the
+parenthetical is removed. Adding this rule for Level 5 also cleaned one Level 4 row:
+尾巴 in `hsk4-3.0.csv` used to end in a bare `colloquial pr.` sense.
 
 A sense is tested for a classifier tag **before** the traditional-vs-simplified reference
 stripper runs, because that stripper rewrites `CL:個|个[ge4]` to a bare `个` and would
@@ -120,9 +171,8 @@ otherwise hide the tag that identifies it.
 
 ## Share-alike obligation
 
-Both CC-CEDICT and CC-CIDICT are CC BY-SA 4.0. `data/hsk4-3.0.csv` and
-`data/hsk4-2.0.csv` are derivatives of both, so **both datasets are redistributed under
-CC BY-SA 4.0**, with attribution preserved in [`../ATTRIBUTION.md`](../ATTRIBUTION.md)
+Both CC-CEDICT and CC-CIDICT are CC BY-SA 4.0. Every CSV in `data/` is a derivative of
+both, so **all datasets are redistributed under CC BY-SA 4.0**, with attribution preserved in [`../ATTRIBUTION.md`](../ATTRIBUTION.md)
 and surfaced in the application at `/about`. The application source code is licensed
 separately; the share-alike term attaches to the datasets, not to the surrounding code.
 

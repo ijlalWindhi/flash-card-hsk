@@ -28,6 +28,10 @@ export const SITEMAP_ROUTES: Array<SitemapEntry> = [
   { path: "/hsk2", priority: 0.9, changefreq: "weekly" },
   { path: "/hsk2/study", priority: 0.8, changefreq: "monthly" },
   { path: "/hsk2/quiz", priority: 0.8, changefreq: "monthly" },
+  // HSK 2.0 Level 5 is a different 1,300 words again, so it is listed too.
+  { path: "/hsk2/5", priority: 0.9, changefreq: "weekly" },
+  { path: "/hsk2/5/study", priority: 0.8, changefreq: "monthly" },
+  { path: "/hsk2/5/quiz", priority: 0.8, changefreq: "monthly" },
   { path: "/about", priority: 0.5, changefreq: "yearly" },
   { path: "/masuk", priority: 0.3, changefreq: "yearly" },
   { path: "/daftar", priority: 0.3, changefreq: "yearly" },

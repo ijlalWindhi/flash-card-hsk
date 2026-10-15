@@ -41,6 +41,7 @@ function toOfficialRecord(
     sourceName: row.source_name,
     sourceUrl: row.source_url,
     sourceVersion: row.source_version,
+    hskLevel: Number(row.hsk_level),
     verifiedAt: row.verified_at,
     createdAt: now,
     updatedAt: now,
@@ -93,6 +94,7 @@ export async function insertManualVocabulary(
       sourceName: null,
       sourceUrl: null,
       sourceVersion: null,
+      hskLevel: null,
       verifiedAt: null,
       createdAt: now,
       updatedAt: now,
@@ -107,10 +109,11 @@ export async function insertManualVocabulary(
  * pinyin, with Hanzi as a stable tie-breaker so two readings of one spelling
  * keep a fixed order. Selects only the client-safe columns.
  *
- * Official rows are filtered by `source_version`, which is what tells the two
- * seeded word lists apart. Manual rows carry no `source_version` — they are the
+ * Official rows are filtered by `source_version` and `hsk_level` together:
+ * HSK 2.0 Levels 4 and 5 share `source_version` 2012, so the pair is what tells
+ * the seeded word lists apart. Manual rows carry neither — they are the
  * administrator's own additions, not part of any syllabus — so they appear
- * under both, which is the only way they never vanish on a learner who
+ * under every one, which is the only way they never vanish on a learner who
  * switches.
  */
 export function selectVocabulary(
@@ -131,7 +134,10 @@ export function selectVocabulary(
     .where(
       or(
         eq(vocabulary.kind, "manual"),
-        eq(vocabulary.sourceVersion, syllabus.sourceVersion)
+        and(
+          eq(vocabulary.sourceVersion, syllabus.sourceVersion),
+          eq(vocabulary.hskLevel, syllabus.level)
+        )
       )
     )
     .orderBy(asc(vocabulary.pinyinSortKey), asc(vocabulary.hanzi))

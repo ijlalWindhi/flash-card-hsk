@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 import {
   DATASET_PATH_HSK2,
+  DATASET_PATH_HSK2_L5,
   EXPECTED_SOURCE_VERSION_HSK2,
   loadDataset,
   validateDataset,
@@ -49,20 +50,45 @@ describe("HSK 2.0 Level 4 dataset", () => {
   })
 })
 
-describe("both decks", () => {
+describe("HSK 2.0 Level 5 dataset", () => {
+  const rows = () => loadDataset(DATASET_PATH_HSK2_L5)
+
+  it("contains the syllabus' thirteen hundred newly-introduced words", () => {
+    const result = validateDataset(rows(), EXPECTED_SOURCE_VERSION_HSK2, 5)
+    expect(result.rowCount).toBe(1300)
+    expect(result.duplicatePairs).toEqual([])
+    expect(result.invalidRows).toEqual([])
+    expect(result.homographPairs).toEqual([])
+    for (const row of rows()) {
+      expect(row.external_id).toMatch(/^hsk2-5-\d{4}$/)
+    }
+  })
+
+  it("repeats no word from the 2.0 Level 4 deck", () => {
+    // Each 2012 headword belongs to exactly one level.
+    const level4 = new Set(loadDataset(DATASET_PATH_HSK2).map((r) => r.hanzi))
+    expect(rows().filter((row) => level4.has(row.hanzi))).toEqual([])
+  })
+})
+
+describe("every deck", () => {
   /**
    * Dictionary bookkeeping that a learner should never see on a card:
    * a classifier tag (`CL:`/`KP:`), a cross-reference standing in for a
    * meaning, or a pronunciation note. Each has leaked before.
    */
   it("never ships a gloss that is dictionary metadata", () => {
-    for (const file of [undefined, DATASET_PATH_HSK2]) {
+    for (const file of [undefined, DATASET_PATH_HSK2, DATASET_PATH_HSK2_L5]) {
       for (const row of loadDataset(file)) {
         for (const column of ["translation_id", "translation_en"] as const) {
           expect(row[column]).not.toMatch(/[A-Z]{2,3}:/)
           for (const sense of row[column].split(";")) {
             expect(sense.trim()).not.toMatch(
-              /^(?:varian\b|(?:[a-z]+ ){0,3}variant of\b|(?:juga|Taiwan|Beijing) dibaca\b|(?:also|Taiwan|Beijing) pr\.)/i
+              /^(?:varian\b|(?:[a-z]+ ){0,3}variant of\b|(?:juga|Taiwan|Beijing|bahasa sehari-hari) dibaca\b|(?:also|Taiwan|Beijing|colloquial) pr\.)/i
+            )
+            // ...nor trailing a real meaning in parentheses.
+            expect(sense).not.toMatch(
+              /\([^()]*\b(?:pr\.|dibaca|variant of|varian dari)\b/
             )
           }
         }

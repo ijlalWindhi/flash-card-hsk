@@ -9,8 +9,8 @@ import {
 /**
  * One studiable word.
  *
- * `official` rows come from `data/hsk4-3.0.csv` and keep the provenance of the
- * syllabus they were sourced from. `manual` rows are created by the
+ * `official` rows come from the CSVs in `data/` and keep the provenance of the
+ * syllabus and level they were sourced from. `manual` rows are created by the
  * administrator and carry no source metadata.
  */
 export const vocabulary = sqliteTable(
@@ -29,6 +29,11 @@ export const vocabulary = sqliteTable(
     sourceName: text("source_name"),
     sourceUrl: text("source_url"),
     sourceVersion: text("source_version"),
+    /**
+     * The HSK level that introduces the word; null for manual entries. HSK 2.0
+     * Levels 4 and 5 share `source_version` 2012, so a deck is the pair.
+     */
+    hskLevel: integer("hsk_level"),
     verifiedAt: text("verified_at"),
     createdAt: integer("created_at", { mode: "timestamp" }).notNull(),
     updatedAt: integer("updated_at", { mode: "timestamp" }).notNull(),

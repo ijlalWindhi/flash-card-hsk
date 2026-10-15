@@ -34,6 +34,7 @@ const officialRow: VocabularyCsvRow = {
   source_name: "CLEC 新版HSK考试大纲",
   source_url: "https://example.invalid/syllabus.pdf",
   source_version: "2025-11",
+  hsk_level: "4",
   verified_at: "2026-08-11",
 }
 
@@ -132,7 +133,10 @@ describe("selectVocabulary", () => {
   const hsk3 = SYLLABUSES["3.0"]
   const hsk2 = SYLLABUSES["2.0"]
 
-  /** One row as each syllabus seeds it, plus one the administrator typed. */
+  /**
+   * One row as each syllabus seeds it, an HSK 2.0 Level 5 row that shares the
+   * 2.0 deck's `source_version`, and one the administrator typed.
+   */
   async function seedBothSyllabuses() {
     await seedOfficialVocabulary(db, [
       {
@@ -147,6 +151,14 @@ describe("selectVocabulary", () => {
         hanzi: "爱情",
         pinyin: "àiqíng",
         source_version: hsk2.sourceVersion,
+      },
+      {
+        ...officialRow,
+        external_id: "hsk2-5-0001",
+        hanzi: "哎",
+        pinyin: "āi",
+        source_version: hsk2.sourceVersion,
+        hsk_level: "5",
       },
     ])
     await insertManualVocabulary(db, {
@@ -188,6 +200,9 @@ describe("selectVocabulary", () => {
     expect(inHsk3.map((entry) => entry.hanzi)).toContain("会议")
     expect(inHsk2.map((entry) => entry.hanzi)).not.toContain("会议")
     expect(inHsk2.map((entry) => entry.hanzi)).toContain("爱情")
+    // Same `source_version` as 爱情, different level.
+    expect(inHsk2.map((entry) => entry.hanzi)).not.toContain("哎")
+    expect(inHsk3.map((entry) => entry.hanzi)).not.toContain("哎")
   })
 
   it("shows the administrator's own words under both syllabuses", async () => {

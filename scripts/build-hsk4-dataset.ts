@@ -1,8 +1,9 @@
 /**
- * Rebuilds the Level 4 seed CSVs from their upstream sources.
+ * Rebuilds the seed CSVs from their upstream sources.
  *
- *   npm run data:build                    -> data/hsk4-3.0.csv (1000 words)
- *   npm run data:build -- --standard=2.0  -> data/hsk4-2.0.csv (600 words)
+ *   npm run data:build                              -> data/hsk4-3.0.csv (1000 words)
+ *   npm run data:build -- --standard=2.0            -> data/hsk4-2.0.csv (600 words)
+ *   npm run data:build -- --standard=2.0 --level=5  -> data/hsk5-2.0.csv (1300 words)
  *
  * Both standards share the same two dictionaries, so a card reads the same way
  * whichever syllabus it came from; only the word list differs. Sources are
@@ -33,6 +34,10 @@ const SOURCES = {
   hsk20: {
     url: "https://raw.githubusercontent.com/glxxyz/hskhsk.com/master/data/lists/HSK%20Official%20With%20Definitions%202012%20L4.txt",
     file: "hsk20-l4.txt",
+  },
+  hsk20L5: {
+    url: "https://raw.githubusercontent.com/glxxyz/hskhsk.com/master/data/lists/HSK%20Official%20With%20Definitions%202012%20L5.txt",
+    file: "hsk20-l5.txt",
   },
   cedict: {
     url: "https://www.mdbg.net/chinese/export/cedict/cedict_1_0_ts_utf-8_mdbg.txt.gz",
@@ -71,6 +76,25 @@ const MANUAL_GLOSSES_20: Record<string, Gloss> = {
     en: "to play the piano",
     id: "bermain piano;memainkan piano",
   },
+  // Level 5: 系 + 领带, glossed separately by both dictionaries.
+  系领带: {
+    en: "to tie a necktie;to wear a tie",
+    id: "memakai dasi;mengikat dasi",
+  },
+}
+
+/**
+ * 2012 headwords whose only dictionary entry is a cross-reference ("erhua
+ * variant of 干活", "variant of 橘子"). The gloss filter drops such pointers,
+ * so the pointer is followed by hand to the entry that carries the meaning.
+ */
+const CROSS_REFERENCES_20: Partial<
+  Record<string, { simplified: string; numeric: string }>
+> = {
+  干活儿: { simplified: "干活", numeric: "gan4 huo2" },
+  纪录: { simplified: "记录", numeric: "ji4 lu4" },
+  桔子: { simplified: "橘子", numeric: "ju2 zi5" },
+  使劲儿: { simplified: "使劲", numeric: "shi3 jin4" },
 }
 
 /**
@@ -84,13 +108,16 @@ const MANUAL_GLOSSES_20: Record<string, Gloss> = {
  */
 const SENSE_OVERRIDES: Record<string, Array<number>> = {
   "hsk3-4-0556": [4, 5],
+  // 纪录 borrows 记录's entry; lead with its "record (in sports etc)" sense.
+  "hsk2-5-0450": [3, 0],
 }
 
-type StandardKey = "3.0" | "2.0"
+type StandardKey = "3.0" | "2.0" | "2.0 L5"
 
 type Standard = {
   out: string
-  membership: (typeof SOURCES)["hsk30"] | (typeof SOURCES)["hsk20"]
+  level: number
+  membership: { url: string; file: string }
   sourceName: string
   sourceUrl: string
   sourceVersion: string
@@ -102,6 +129,7 @@ type Standard = {
 const STANDARDS: Record<StandardKey, Standard> = {
   "3.0": {
     out: "hsk4-3.0.csv",
+    level: 4,
     membership: SOURCES.hsk30,
     sourceName: "CLEC 新版HSK考试大纲",
     sourceUrl:
@@ -113,6 +141,7 @@ const STANDARDS: Record<StandardKey, Standard> = {
   },
   "2.0": {
     out: "hsk4-2.0.csv",
+    level: 4,
     membership: SOURCES.hsk20,
     // CLEC no longer hosts the 2012 syllabus PDF, so the fetchable authority
     // for membership is the transcription — see docs/dataset-provenance.md.
@@ -121,6 +150,17 @@ const STANDARDS: Record<StandardKey, Standard> = {
     sourceVersion: "2012",
     verifiedAt: "2026-09-16",
     expectedRows: 600,
+    manualGlosses: MANUAL_GLOSSES_20,
+  },
+  "2.0 L5": {
+    out: "hsk5-2.0.csv",
+    level: 5,
+    membership: SOURCES.hsk20L5,
+    sourceName: "Hanban 新汉语水平考试大纲 HSK五级 (2012)",
+    sourceUrl: SOURCES.hsk20L5.url,
+    sourceVersion: "2012",
+    verifiedAt: "2026-10-15",
+    expectedRows: 1300,
     manualGlosses: MANUAL_GLOSSES_20,
   },
 }
@@ -222,7 +262,15 @@ const INLINE_CLASSIFIER_TAG = /\s*[(,;]\s*[A-Z]{2,3}:[^)]*\)?/g
  * has to be allowed for, not just the bare phrase.
  */
 const NOT_A_GLOSS =
-  /^\(?(?:see\b|lihat\b|varian\b|(?:also|Taiwan|Beijing) pr\.|(?:juga|Taiwan|Beijing) dibaca\b|(?:[a-z]+ ){0,3}variant of\b)/i
+  /^\(?(?:see\b|lihat\b|varian\b|(?:also|Taiwan|Beijing|colloquial) pr\.|(?:juga|Taiwan|Beijing|bahasa sehari-hari) dibaca\b|(?:[a-z]+ ){0,3}variant of\b)/i
+
+/**
+ * The same notes also trail a real meaning in parentheses — "classifier for
+ * horses (Taiwan pr. [pi1])", "inscribed bamboo stick (variant of 籤|签[qian1])"
+ * — where only the parenthetical should go.
+ */
+const INLINE_NOTE =
+  /\s*\([^()]*\b(?:pr\.|dibaca\b|variant of\b|varian dari\b)[^()]*\)/g
 
 /** Splits one CC-CEDICT body into clean, learner-facing senses. */
 function splitSenses(body: string): Array<string> {
@@ -239,6 +287,7 @@ function splitSenses(body: string): Array<string> {
           .replace(/[^\s|[\]]+\|([^\s|[\]]+)(\[[^\]]*\])?/g, "$1")
           // leftover bare pinyin brackets
           .replace(/\[[^\]]*\]/g, "")
+          .replace(INLINE_NOTE, "")
           .replace(INLINE_CLASSIFIER_TAG, "")
           .replace(/\s+/g, " ")
           .trim()
@@ -390,14 +439,14 @@ type HskRow = {
 }
 
 /** HSK 3.0: the syllabus transcription already carries a CC-CEDICT key. */
-function readHsk30(raw: Buffer): Array<Membership> {
+function readHsk30(raw: Buffer, level: number): Array<Membership> {
   const rows = parse(raw.toString("utf8"), {
     columns: true,
     skip_empty_lines: true,
   }) as Array<HskRow>
 
   return rows
-    .filter((row) => row.Level === "4")
+    .filter((row) => row.Level === String(level))
     .map((row) => {
       const externalId = row.ID.replace(/^L(\d+)-/, "hsk3-$1-")
       // A cell can hold several traditional spellings of one word; they share a
@@ -422,7 +471,11 @@ function readHsk30(raw: Buffer): Array<Membership> {
  * trusted, and the dictionary key is recovered by rendering each CC-CEDICT
  * reading of the same Hanzi and keeping the one that matches.
  */
-function readHsk20(raw: Buffer, english: DictIndex): Array<Membership> {
+function readHsk20(
+  raw: Buffer,
+  english: DictIndex,
+  level: number
+): Array<Membership> {
   const lines = raw
     .toString("utf8")
     .replace(/^\uFEFF/, "")
@@ -434,18 +487,23 @@ function readHsk20(raw: Buffer, english: DictIndex): Array<Membership> {
     const pinyin = marked.trim()
     const candidates = english.bySimplified.get(hanzi) ?? []
 
-    // `dǎo, dào` — the syllabus lists one word under two readings.
-    const keys = pinyin
-      .split(",")
-      .map((reading) => matchReading(candidates, reading.trim()))
-      .filter((numeric): numeric is string => numeric !== null)
-      .map((numeric) => ({ simplified: hanzi, numeric }))
+    const crossReference = CROSS_REFERENCES_20[hanzi]
+    const keys = crossReference
+      ? [crossReference]
+      : pinyin
+          // `dǎo, dào` — the syllabus lists one word under two readings.
+          .split(",")
+          .map((reading) => matchReading(candidates, reading.trim()))
+          .filter((numeric): numeric is string => numeric !== null)
+          .map((numeric) => ({ simplified: hanzi, numeric }))
 
+    const externalId = `hsk2-${level}-${String(index + 1).padStart(4, "0")}`
     return {
-      externalId: `hsk2-4-${String(index + 1).padStart(4, "0")}`,
+      externalId,
       hanzi,
       pinyin,
       keys,
+      senseOverrides: SENSE_OVERRIDES[externalId],
     }
   })
 }
@@ -484,12 +542,19 @@ async function main() {
   const flag = process.argv
     .find((arg) => arg.startsWith("--standard="))
     ?.slice("--standard=".length)
-  if (flag && !(flag in STANDARDS)) {
+  const level = process.argv
+    .find((arg) => arg.startsWith("--level="))
+    ?.slice("--level=".length)
+  // Level 4 is the default, so its decks keep their bare standard as the key.
+  const deck = [flag ?? "3.0", level && level !== "4" ? `L${level}` : ""]
+    .filter(Boolean)
+    .join(" ")
+  if (!(deck in STANDARDS)) {
     throw new Error(
-      `unknown --standard=${flag}; expected one of ${Object.keys(STANDARDS).join(", ")}`
+      `unknown deck "${deck}"; expected one of ${Object.keys(STANDARDS).join(", ")}`
     )
   }
-  const standard = STANDARDS[(flag as StandardKey | undefined) ?? "3.0"]
+  const standard = STANDARDS[deck as StandardKey]
   const out = path.join(ROOT, "data", standard.out)
 
   const [membershipRaw, cedictRaw, cidictRaw] = await Promise.all([
@@ -503,17 +568,17 @@ async function main() {
 
   const words =
     standard.membership === SOURCES.hsk30
-      ? readHsk30(membershipRaw)
-      : readHsk20(membershipRaw, english)
+      ? readHsk30(membershipRaw, standard.level)
+      : readHsk20(membershipRaw, english, standard.level)
 
   if (words.length !== standard.expectedRows) {
     throw new Error(
-      `expected ${standard.expectedRows} Level 4 rows in ${standard.membership.file}, found ${words.length}`
+      `expected ${standard.expectedRows} Level ${standard.level} rows in ${standard.membership.file}, found ${words.length}`
     )
   }
 
   const lines = [
-    "external_id,hanzi,pinyin,translation_id,translation_en,source_name,source_url,source_version,verified_at",
+    "external_id,hanzi,pinyin,translation_id,translation_en,source_name,source_url,source_version,hsk_level,verified_at",
   ]
   const unresolved: Array<string> = []
 
@@ -553,6 +618,7 @@ async function main() {
         standard.sourceName,
         standard.sourceUrl,
         standard.sourceVersion,
+        String(standard.level),
         standard.verifiedAt,
       ]
         .map(toCsvField)
@@ -565,7 +631,7 @@ async function main() {
       `unresolved rows (${unresolved.length}):\n  ${unresolved.join("\n  ")}\n`
     )
     throw new Error(
-      "every Level 4 row needs both an Indonesian and an English gloss"
+      `every Level ${standard.level} row needs both an Indonesian and an English gloss`
     )
   }
 

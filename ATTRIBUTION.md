@@ -1,6 +1,6 @@
 # Attribution
 
-`data/hsk4-3.0.csv` and `data/hsk4-2.0.csv` are derivative works of the sources below and
+`data/hsk4-3.0.csv`, `data/hsk4-2.0.csv` and `data/hsk5-2.0.csv` are derivative works of the sources below and
 are redistributed under the **Creative Commons Attribution-ShareAlike 4.0 International
 licence (CC BY-SA 4.0)**, <https://creativecommons.org/licenses/by-sa/4.0/>.
 
@@ -36,11 +36,11 @@ whose parsing code is MIT licensed:
 > CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR
 > THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-## Word list — Hanban 新汉语水平考试大纲 HSK四级 (2012)
+## Word list — Hanban 新汉语水平考试大纲 HSK四级 / HSK五级 (2012)
 
-The membership of HSK 2.0 Level 4 is defined by the _New HSK Test Syllabus_ published by
-Hanban / Confucius Institute Headquarters in 2012. CLEC no longer hosts that PDF, so the
-fetchable authority is the machine-readable transcription published at
+The membership of HSK 2.0 Levels 4 and 5 is defined by the _New HSK Test Syllabus_
+published by Hanban / Confucius Institute Headquarters in 2012. CLEC no longer hosts that
+syllabus, so the fetchable authority is the machine-readable transcription published at
 <https://hskhsk.com> and kept in [`glxxyz/hskhsk.com`](https://github.com/glxxyz/hskhsk.com),
 which is MIT licensed:
 
@@ -115,5 +115,5 @@ The notice distributed with CC-CIDICT reads:
 ## Share-alike
 
 Because CC-CEDICT and CC-CIDICT are licensed CC BY-SA 4.0, any redistribution of
-`data/hsk4-3.0.csv` or `data/hsk4-2.0.csv` — modified or not — must keep this attribution
+any of the CSVs in `data/` — modified or not — must keep this attribution
 and remain under CC BY-SA 4.0.

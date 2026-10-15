@@ -8,11 +8,19 @@ import { z } from "zod"
  * they are allowed to touch anyone's statistics, which stops a malformed or
  * truncated request from writing nonsense that later reads as a record.
  */
+/**
+ * A sanity bound, not a product limit. A learner can quiz a whole list in one
+ * session, so it must stay above the longest deck plus the administrator's own
+ * words — HSK 2.0 Level 5 alone is 1,300 — or that session's result is refused
+ * after it has been played. 5,000 is the whole HSK 2.0 syllabus.
+ */
+const MAX_SESSION_WORDS = 5000
+
 export const quizResultSchema = z
   .object({
     mode: z.enum(["choice", "match", "typing", "truefalse", "draw"]),
     source: z.enum(["flashcard", "random", "selected", "review"]),
-    bestStreak: z.number().int().min(0).max(1000),
+    bestStreak: z.number().int().min(0).max(MAX_SESSION_WORDS),
     dayKey: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Tanggal tidak valid."),
     words: z
       .array(
@@ -23,7 +31,7 @@ export const quizResultSchema = z
         })
       )
       .min(1, "Sesi kosong tidak bisa dicatat.")
-      .max(1000, "Sesi terlalu panjang."),
+      .max(MAX_SESSION_WORDS, "Sesi terlalu panjang."),
   })
   .refine((value) => value.bestStreak <= value.words.length, {
     message: "Beruntun tidak mungkin melebihi jumlah jawaban.",

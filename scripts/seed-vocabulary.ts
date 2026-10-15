@@ -1,5 +1,5 @@
 /**
- * Imports both Level 4 seed files into the configured Turso/libSQL database.
+ * Imports every seed file into the configured Turso/libSQL database.
  *
  * Run with `npm run db:seed`, after `npm run db:migrate`. Safe to re-run: rows
  * already present are skipped, so administrator edits and manual entries are
@@ -27,7 +27,11 @@ function loadAllDatasets(): Array<VocabularyCsvRow> {
 
   for (const dataset of DATASETS) {
     const fileRows = loadDataset(dataset.file)
-    const validation = validateDataset(fileRows, dataset.sourceVersion)
+    const validation = validateDataset(
+      fileRows,
+      dataset.sourceVersion,
+      dataset.level
+    )
 
     problems.push(
       ...validation.invalidRows.map(

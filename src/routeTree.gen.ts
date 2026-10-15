@@ -22,6 +22,9 @@ import { Route as AdminLoginRouteImport } from './routes/admin/login'
 import { Route as Hsk2IndexRouteImport } from './routes/hsk2/index'
 import { Route as Hsk2QuizRouteImport } from './routes/hsk2/quiz'
 import { Route as Hsk2StudyRouteImport } from './routes/hsk2/study'
+import { Route as Hsk25IndexRouteImport } from './routes/hsk2/5/index'
+import { Route as Hsk25QuizRouteImport } from './routes/hsk2/5/quiz'
+import { Route as Hsk25StudyRouteImport } from './routes/hsk2/5/study'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -88,6 +91,21 @@ const Hsk2StudyRoute = Hsk2StudyRouteImport.update({
   path: '/hsk2/study',
   getParentRoute: () => rootRouteImport,
 } as any)
+const Hsk25IndexRoute = Hsk25IndexRouteImport.update({
+  id: '/hsk2/5/',
+  path: '/hsk2/5/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Hsk25QuizRoute = Hsk25QuizRouteImport.update({
+  id: '/hsk2/5/quiz',
+  path: '/hsk2/5/quiz',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const Hsk25StudyRoute = Hsk25StudyRouteImport.update({
+  id: '/hsk2/5/study',
+  path: '/hsk2/5/study',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -103,6 +121,9 @@ export interface FileRoutesByFullPath {
   '/hsk2/study': typeof Hsk2StudyRoute
   '/admin/': typeof AdminIndexRoute
   '/hsk2/': typeof Hsk2IndexRoute
+  '/hsk2/5/quiz': typeof Hsk25QuizRoute
+  '/hsk2/5/study': typeof Hsk25StudyRoute
+  '/hsk2/5/': typeof Hsk25IndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -118,6 +139,9 @@ export interface FileRoutesByTo {
   '/hsk2/study': typeof Hsk2StudyRoute
   '/admin': typeof AdminIndexRoute
   '/hsk2': typeof Hsk2IndexRoute
+  '/hsk2/5/quiz': typeof Hsk25QuizRoute
+  '/hsk2/5/study': typeof Hsk25StudyRoute
+  '/hsk2/5': typeof Hsk25IndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -134,6 +158,9 @@ export interface FileRoutesById {
   '/hsk2/study': typeof Hsk2StudyRoute
   '/admin/': typeof AdminIndexRoute
   '/hsk2/': typeof Hsk2IndexRoute
+  '/hsk2/5/quiz': typeof Hsk25QuizRoute
+  '/hsk2/5/study': typeof Hsk25StudyRoute
+  '/hsk2/5/': typeof Hsk25IndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -151,6 +178,9 @@ export interface FileRouteTypes {
     | '/hsk2/study'
     | '/admin/'
     | '/hsk2/'
+    | '/hsk2/5/quiz'
+    | '/hsk2/5/study'
+    | '/hsk2/5/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -166,6 +196,9 @@ export interface FileRouteTypes {
     | '/hsk2/study'
     | '/admin'
     | '/hsk2'
+    | '/hsk2/5/quiz'
+    | '/hsk2/5/study'
+    | '/hsk2/5'
   id:
     | '__root__'
     | '/'
@@ -181,6 +214,9 @@ export interface FileRouteTypes {
     | '/hsk2/study'
     | '/admin/'
     | '/hsk2/'
+    | '/hsk2/5/quiz'
+    | '/hsk2/5/study'
+    | '/hsk2/5/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -197,6 +233,9 @@ export interface RootRouteChildren {
   Hsk2StudyRoute: typeof Hsk2StudyRoute
   AdminIndexRoute: typeof AdminIndexRoute
   Hsk2IndexRoute: typeof Hsk2IndexRoute
+  Hsk25QuizRoute: typeof Hsk25QuizRoute
+  Hsk25StudyRoute: typeof Hsk25StudyRoute
+  Hsk25IndexRoute: typeof Hsk25IndexRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -292,6 +331,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Hsk2StudyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/hsk2/5/': {
+      id: '/hsk2/5/'
+      path: '/hsk2/5'
+      fullPath: '/hsk2/5/'
+      preLoaderRoute: typeof Hsk25IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hsk2/5/quiz': {
+      id: '/hsk2/5/quiz'
+      path: '/hsk2/5/quiz'
+      fullPath: '/hsk2/5/quiz'
+      preLoaderRoute: typeof Hsk25QuizRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hsk2/5/study': {
+      id: '/hsk2/5/study'
+      path: '/hsk2/5/study'
+      fullPath: '/hsk2/5/study'
+      preLoaderRoute: typeof Hsk25StudyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -309,6 +369,9 @@ const rootRouteChildren: RootRouteChildren = {
   Hsk2StudyRoute: Hsk2StudyRoute,
   AdminIndexRoute: AdminIndexRoute,
   Hsk2IndexRoute: Hsk2IndexRoute,
+  Hsk25QuizRoute: Hsk25QuizRoute,
+  Hsk25StudyRoute: Hsk25StudyRoute,
+  Hsk25IndexRoute: Hsk25IndexRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

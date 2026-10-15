@@ -7,7 +7,7 @@ import { getVocabulary } from "./vocabulary.server"
  *
  * Route loaders call this instead of importing the database directly, which is
  * what keeps Turso credentials out of the browser bundle. A syllabus is at most
- * ~1,000 rows, so it is fetched once and filtered client-side rather than
+ * ~1,300 rows, so it is fetched once and filtered client-side rather than
  * round-tripping on every keystroke.
  *
  * The syllabus is validated rather than trusted: this is a public GET whose
@@ -15,5 +15,5 @@ import { getVocabulary } from "./vocabulary.server"
  * an empty list that looks like a missing seed.
  */
 export const getVocabularyFn = createServerFn({ method: "GET" })
-  .validator(z.object({ syllabus: z.enum(["3.0", "2.0"]) }))
+  .validator(z.object({ syllabus: z.enum(["3.0", "2.0", "2.0-5"]) }))
   .handler(({ data }) => getVocabulary(data.syllabus))

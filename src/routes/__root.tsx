@@ -44,7 +44,7 @@ export const Route = createRootRoute({
       {
         name: "description",
         content:
-          "Hafalkan kata yang diperkenalkan di HSK tingkat 4 — silabus 3.0 maupun 2.0 — dengan arti Indonesia dan Inggris.",
+          "Hafalkan kata yang diperkenalkan di HSK tingkat 4 — silabus 3.0 maupun 2.0 — dan HSK 2.0 tingkat 5, dengan arti Indonesia dan Inggris.",
       },
       { name: "theme-color", content: "#faf9f7" },
       { property: "og:site_name", content: SITE_NAME },

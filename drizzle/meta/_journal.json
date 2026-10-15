@@ -8,6 +8,13 @@
       "when": 1786441837363,
       "tag": "0000_natural_spot",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1792080529316,
+      "tag": "0001_hsk_level",
+      "breakpoints": true
     }
   ]
 }

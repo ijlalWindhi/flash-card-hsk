@@ -74,10 +74,11 @@ export function VocabularyPage({
     <main className="mx-auto w-full max-w-5xl px-5 pt-10 pb-32">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          {/* These are the words the syllabus *introduces* at level 4, not the
-              cumulative list — worth saying once, near the title. */}
+          {/* These are the words the syllabus *introduces* at this level, not
+              the cumulative list — worth saying once, near the title. */}
           <p className="eyebrow text-mark">
-            {syllabus.name} · tingkat 4 · {items.length} kata baru
+            {syllabus.name} · tingkat {syllabus.level} · {items.length} kata
+            baru
           </p>
           <h1 className="mt-2 text-3xl font-medium tracking-tight">
             Daftar kosa kata

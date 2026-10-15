@@ -63,7 +63,7 @@ export function SessionSizeDialog({
           <DialogHeader>
             <DialogTitle>Sesi acak</DialogTitle>
             <DialogDescription>
-              Ambil kata secara acak dari seluruh {maxCount} kata HSK 4.
+              Ambil kata secara acak dari seluruh {maxCount} kata di daftar ini.
             </DialogDescription>
           </DialogHeader>
 
