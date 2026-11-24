@@ -111,7 +111,7 @@ export function QuestionDraw({
       </form>
 
       {answered ? (
-        <QuizFeedback correct={correct} autoAdvance={false} onNext={onNext} />
+        <QuizFeedback correct={correct} onNext={onNext} />
       ) : null}
     </div>
   )

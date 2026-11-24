@@ -163,7 +163,11 @@ export function QuestionMatch({
       {solved ? (
         <QuizFeedback
           correct={flawless}
-          answer={`${missed.length} kata sempat tertukar. Perhatikan lagi di ringkasan nanti.`}
+          answer={
+            flawless
+              ? undefined
+              : `${missed.length} kata sempat tertukar. Perhatikan lagi di ringkasan nanti.`
+          }
           onNext={onNext}
         />
       ) : null}

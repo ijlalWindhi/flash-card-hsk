@@ -5,20 +5,15 @@ import type { Page } from "@playwright/test"
 /**
  * Answers the current multiple-choice question by picking the first option.
  *
- * Which option is right varies run to run, so the helper handles both: a wrong
- * answer waits for the learner to press Lanjut, a right one advances itself.
- * That makes these tests exercise the real feedback flow rather than a path
- * that only holds when the guess happens to be lucky.
+ * Right or wrong, the feedback shows the word in full and waits for Lanjut —
+ * a right answer may have been a guess.
  */
 async function answerFirstOption(page: Page) {
   await page.getByTestId("quiz-options").getByRole("button").first().click()
 
   const feedback = page.getByTestId("quiz-feedback")
   await expect(feedback).toBeVisible()
-
-  if ((await feedback.getAttribute("data-correct")) === "false") {
-    await page.getByRole("button", { name: /^lanjut$/i }).click()
-  }
+  await page.getByRole("button", { name: /^lanjut$/i }).click()
   await expect(feedback).toBeHidden()
 }
 
